@@ -96,19 +96,43 @@ void altaProducto(FILE *archivo)
 
     // °Ingreso de datos y validaciones
     printf("Ingrese el nro de orden (mayor a 0): ");
-    scanf("%d", &cal.orden);
+    int lectura = scanf("%d", &cal.orden); // scanf si leyó correctamente el tipo de dato, devolverá 1
     limpiarBuffer();
 
-    // -Validar que el nro de orden ingresado no exista previamente-
-    // -Validar que no haya ingresado un valor flotante-????
-    // -Validar que no haya ingresado un caracter-????
-
-    while (cal.orden <= 0)
+    int bandera = 0;
+    while (!bandera)
     {
-        printf("El numero ingresado no puede ser igual o menor que 0.\n");
-        printf("Vuelva a intentarlo: ");
-        scanf("%d", &cal.orden);
-        limpiarBuffer();
+        if (lectura != 1)
+        {
+            printf("El numero ingresado no es un entero.\n");
+            printf("Vuelva a intententarlo: ");
+            lectura = scanf("%d", &cal.orden);
+            limpiarBuffer();
+            continue;
+        }
+
+        if (cal.orden <= 0)
+        {
+            printf("El numero ingresado no puede ser igual o menor que 0.\n");
+            printf("Vuelva a intentarlo: ");
+            scanf("%d", &cal.orden);
+            limpiarBuffer();
+            continue;
+        }
+
+        // -Validar que el nro de orden ingresado no exista previamente-
+        fseek(archivo, (cal.orden - 1) * sizeof(Calzados), SEEK_SET);
+        if ((fread(&cal, sizeof(Calzados), 1, archivo)) == 1)
+        {
+            printf("El nro de orden ingresado se encuentra ocupado.\n");
+            printf("Ingrese otro nro: ");
+            scanf("%d", &cal.orden);
+            limpiarBuffer();
+            continue;
+        }
+
+        // Si pasó todas las validaciones, entonces ya puedo salir del while
+        bandera = 1;
     }
 
     printf("Nombre del vendedor/a: ");
