@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <ctype.h>
+#include "funciones.h"
 
 //FUNCIONES (Despues las pasamos a un archivo a parte donde estáran todas las funciones)--------------------------
 //1 (MENU)
