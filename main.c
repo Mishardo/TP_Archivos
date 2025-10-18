@@ -156,8 +156,9 @@ void altaProducto(FILE *archivo)
 
     // °°°°Ingreso de datos y validaciones°°°°
     // Ingreso del ORDEN
+    int lectura, orden_temporal;
     printf("Ingrese el nro de orden (mayor a 0): ");
-    int lectura = scanf("%d", &cal.orden); // scanf si leyó correctamente el tipo de dato, devolverá 1
+    lectura = scanf("%d", &orden_temporal); // scanf si leyó correctamente el tipo de dato, devolverá 1
     limpiarBuffer();
 
     int bandera = 0;
@@ -168,35 +169,39 @@ void altaProducto(FILE *archivo)
         {
             printf("El numero ingresado no es un entero.\n");
             printf("Vuelva a intententarlo: ");
-            lectura = scanf("%d", &cal.orden);
+            lectura = scanf("%d", &orden_temporal);
             limpiarBuffer();
             continue;
         }
 
         // Validar que no sea menor o igual a 0
-        if (cal.orden <= 0)
+        if (orden_temporal <= 0)
         {
             printf("El numero ingresado no puede ser igual o menor que 0.\n");
             printf("Vuelva a intentarlo: ");
-            scanf("%d", &cal.orden);
+            scanf("%d", &orden_temporal);
             limpiarBuffer();
             continue;
         }
 
         // Validar que no exista previamente
         // Seguramente funcione mal
-        fseek(archivo, (cal.orden - 1) * sizeof(Calzados), SEEK_SET);
+        fseek(archivo, (orden_temporal - 1) * sizeof(Calzados), SEEK_SET);
         if ((fread(&cal, sizeof(Calzados), 1, archivo)) == 1)
         {
-            printf("El nro de orden ingresado se encuentra ocupado.\n");
-            printf("Ingrese otro nro: ");
-            scanf("%d", &cal.orden);
-            limpiarBuffer();
-            continue;
+            if (orden_temporal == cal.orden)
+            {
+                printf("El nro de orden ingresado se encuentra ocupado.\n");
+                printf("Ingrese otro nro: ");
+                scanf("%d", &orden_temporal);
+                limpiarBuffer();
+                continue;
+            }
         }
 
         // Si pasó todas las validaciones, entonces ya puedo salir del while
         bandera = 1;
+        cal.orden = orden_temporal;
     }
 
     // Ingreso del NOMBRE VENDEDOR
@@ -215,7 +220,7 @@ void altaProducto(FILE *archivo)
     printf("Ahora, ingrese la categoria del calzado: ");
     scanf("%s", cal.categoria);
     limpiarBuffer();
-    validarSoloLetras(&cal.categoria);
+    validarSoloLetras(cal.categoria);
 
     // Ingreso de la CANTIDAD
     printf("Ingrese la cantidad: ");
@@ -265,9 +270,9 @@ void altaProducto(FILE *archivo)
     fseek(archivo, (cal.orden - 1) * sizeof(Calzados), SEEK_SET);
     fwrite(&cal, sizeof(Calzados), 1, archivo);
     fclose(archivo);
-
-    // *************FALTA TERMINAR*****************
 }
+// *************FALTA TERMINAR*****************
+
 // 4 (LISTAR BINARIO)
 
 // 5 (BUSCAR)
@@ -343,7 +348,43 @@ void modificarProducto(FILE *archivo)
 
     fclose(archivo);
 }
+
 // 7 (BAJA LOGICA)
+void bajaLogica(FILE *archivo)
+{
+    Calzados cal;
+    archivo = fopen("registros.dat", "r+b");
+    if (archivo == NULL)
+    {
+        printf("No hay productos para dar de baja.");
+        return;
+    }
+
+    int orden = leerOrden();
+
+    int encontrado = 0;
+    fseek(archivo, 0, SEEK_SET);
+
+    while ((fread(&cal, sizeof(Calzados), 1, archivo)) == 1)
+    {
+        if (orden == cal.orden)
+        {
+            encontrado = 1;
+            printf("Vendedor\tFecha\tCategoria\tCantidad\tPrecio Unitario\tDescuento\tSubtotal\tI.V.A\tTotal\tActivo");
+            printf("%10d %10d/%d/%d %10s %10d %10.2f %10.2f %10.2f %10.2f %10.2f %10d", cal.vendedor, cal.dia, cal.mes, cal.anio, cal.categoria, cal.cantidad, cal.precio, cal.descuento, cal.sub_total, cal.iva, cal.total, cal.activo);
+        }
+    }
+
+    if (!encontrado)
+    {
+        printf("No se ha encontado el orden %d", &orden);
+        fclose(archivo);
+        return;
+    }
+
+    fclose(archivo);
+}
+// ********************** FALTA TERMINAR *********************
 
 // 8 (BAJA FISICA)
 
