@@ -43,11 +43,14 @@ void obtenerFechaActual(int *dia, int *mes, int *anio)
     *anio = fechaLocal->tm_year + 1900; // Años desde 1900
 }
 
-void validarFecha(Calzados *cal, int dia_actual, int mes_actual, int anio_actual)
+void validarFecha(Calzados *cal)
 {
+    int dia_actual, mes_actual, anio_actual;
+    obtenerFechaActual(&dia_actual, &mes_actual, &anio_actual);
+
     while (cal->anio > anio_actual)
     {
-        printf("El anio ingresado no es correcto.\n");
+        printf("El anio es superior al anio acutal.\n");
         printf("Vuelva a intentarlo: ");
         scanf("%d", cal->anio);
         limpiarBuffer();
@@ -55,7 +58,7 @@ void validarFecha(Calzados *cal, int dia_actual, int mes_actual, int anio_actual
 
     while (cal->mes > mes_actual)
     {
-        printf("El mes ingresado no es correcto.\n");
+        printf("El mes ingresado es superior al mes actual.\n");
         printf("Intente de nuevo: ");
         scanf("%d", cal->mes);
         limpiarBuffer();
@@ -63,8 +66,8 @@ void validarFecha(Calzados *cal, int dia_actual, int mes_actual, int anio_actual
 
     while (cal->dia > dia_actual)
     {
-        printf("El mes ingresado no es correcto.\n");
-        printf("Intente de nuevo: ");
+        printf("El dia ingresado es superior al dia acutal.\n");
+        printf("Ingrese de nuevo: ");
         scanf("%d", cal->dia);
         limpiarBuffer();
     }
@@ -134,7 +137,6 @@ void altaProducto(FILE *archivo)
 {
     Calzados cal;
     archivo = fopen("registros.dat", "r+b");
-    int dia_actual, mes_actual, anio_actual;
 
     // °°°°Ingreso de datos y validaciones°°°°
     // Ingreso del ORDEN
@@ -187,19 +189,17 @@ void altaProducto(FILE *archivo)
     limpiarBuffer();
     validarSoloLetras(cal.vendedor);
 
-    // Ingreso de la FECHA
+    // Ingreso de la FECHA (Falta validar el caso base)
     printf("Fecha de ingreso del producto (No puede superar la fecha actual): ");
     scanf("%d %d %d", &cal.dia, &cal.mes, &cal.anio);
     limpiarBuffer();
-
-    obtenerFechaActual(&dia_actual, &mes_actual, &anio_actual);
-    validarFecha(&cal, dia_actual, mes_actual, anio_actual);
+    validarFecha(&cal);
 
     // Ingreso de la CATEGORIA
     printf("Ahora, ingrese la categoria del calzado: ");
     scanf("%s", cal.categoria);
     limpiarBuffer();
-    validarSoloCaracteres(&cal.categoria);
+    validarSoloLetras(&cal.categoria);
 
     // Ingreso de la CANTIDAD
     printf("Ingrese la cantidad: ");
