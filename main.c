@@ -288,7 +288,7 @@ void modificarProducto(FILE *archivo)
     int encontrado = 0;
     int validacion = 0;
     fseek(archivo, 0, SEEK_SET);
-    while((fread(&cal, sizeof(Calzados), 1, archivo)) == 1)
+    while ((fread(&cal, sizeof(Calzados), 1, archivo)) == 1)
     {
         if (orden == cal.orden)
         {
@@ -306,18 +306,18 @@ void modificarProducto(FILE *archivo)
                 if (cantidad_nueva == 0)
                 {
                     printf("Se ha ingresado una cantidad incorrecta.\n");
-                    printf("Volviendo al menu");
+                    printf("Volviendo al menu\n");
                     fclose(archivo);
                     return;
                 }
                 else if (cantidad_nueva + cal.cantidad < 0)
                 {
                     printf("El resultado de la operacion volverá negativa la cantidad existente.\n");
-                    printf("Volviendo al menu");
+                    printf("Volviendo al menu\n");
                     fclose(archivo);
                     return;
                 }
-                
+
                 cal.cantidad += cantidad_nueva;
 
                 calcularImportes(&cal);
