@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <ctype.h>
-#include "funciones.h"
 #include <time.h>
+#include <string.h>
+
+#include "funciones.h"
 
 #define IVA 23
 
@@ -68,6 +70,46 @@ void validarFecha(Calzados *cal, int dia_actual, int mes_actual, int anio_actual
     }
 }
 
+void validarSoloLetras(char *nombre)
+{
+    char c;
+    for (int i = 0; nombre[i] != '\n' && nombre[i] != '\0'; i++)
+    {
+        c = nombre[i];
+
+        // Comparo si está entre a y z
+        if (c >= 'a' && c <= 'z')
+        {
+            if (i == 0)
+            {
+                nombre[i] = toupper(c); // Mayusculizo solo la primera letra
+            }
+            continue; // vuelvo al for
+        }
+
+        // Comparo si está entre A y Z
+        else if (c >= 'A' && c <= 'Z')
+        {
+            if (i != 0)
+            {
+                nombre[i] = tolower(c); // Minusculizo solo si no es la primera letra
+            }
+            continue;
+        }
+
+        // Si el caracter no está entre ninguno de ellos, entonces no es una letra
+        else
+        {
+            printf("El nombre ingresado no es válido, solo debe contener letras.\n");
+            printf("Intente de nuevo: ");
+            scanf("%s", nombre);
+            limpiarBuffer();
+            i = -1; // Como se ingresa nuevo texto, el ciclo debe volver a empezar
+            continue;
+        }
+    }
+}
+
 // ---------------------------FUNCIONES PEDIDAS--------------------------
 //(Despues las pasamos a un archivo a parte donde estáran todas las funciones)
 
@@ -94,7 +136,8 @@ void altaProducto(FILE *archivo)
     archivo = fopen("registros.dat", "r+b");
     int dia_actual, mes_actual, anio_actual;
 
-    // °Ingreso de datos y validaciones
+    // °°°°Ingreso de datos y validaciones°°°°
+    // Ingreso del ORDEN
     printf("Ingrese el nro de orden (mayor a 0): ");
     int lectura = scanf("%d", &cal.orden); // scanf si leyó correctamente el tipo de dato, devolverá 1
     limpiarBuffer();
@@ -102,6 +145,7 @@ void altaProducto(FILE *archivo)
     int bandera = 0;
     while (!bandera)
     {
+        // Validar que no es un float o caracter
         if (lectura != 1)
         {
             printf("El numero ingresado no es un entero.\n");
@@ -111,6 +155,7 @@ void altaProducto(FILE *archivo)
             continue;
         }
 
+        // Validar que no sea menor o igual a 0
         if (cal.orden <= 0)
         {
             printf("El numero ingresado no puede ser igual o menor que 0.\n");
@@ -120,7 +165,8 @@ void altaProducto(FILE *archivo)
             continue;
         }
 
-        // -Validar que el nro de orden ingresado no exista previamente-
+        // Validar que no exista previamente
+        // Seguramente funcione mal
         fseek(archivo, (cal.orden - 1) * sizeof(Calzados), SEEK_SET);
         if ((fread(&cal, sizeof(Calzados), 1, archivo)) == 1)
         {
@@ -135,12 +181,13 @@ void altaProducto(FILE *archivo)
         bandera = 1;
     }
 
+    // Ingreso del NOMBRE VENDEDOR
     printf("Nombre del vendedor/a: ");
     scanf("%s", cal.vendedor);
     limpiarBuffer();
+    validarSoloLetras(cal.vendedor);
 
-    // -Vendría una validación-
-
+    // Ingreso de la FECHA
     printf("Fecha de ingreso del producto (No puede superar la fecha actual): ");
     scanf("%d %d %d", &cal.dia, &cal.mes, &cal.anio);
     limpiarBuffer();
@@ -148,11 +195,13 @@ void altaProducto(FILE *archivo)
     obtenerFechaActual(&dia_actual, &mes_actual, &anio_actual);
     validarFecha(&cal, dia_actual, mes_actual, anio_actual);
 
+    // Ingreso de la CATEGORIA
     printf("Ahora, ingrese la categoria del calzado: ");
     scanf("%s", cal.categoria);
+    limpiarBuffer();
+    validarSoloCaracteres(&cal.categoria);
 
-    // -Vendría una validación-
-
+    // Ingreso de la CANTIDAD
     printf("Ingrese la cantidad: ");
     scanf("%d", &cal.cantidad);
     limpiarBuffer();
@@ -165,6 +214,7 @@ void altaProducto(FILE *archivo)
         limpiarBuffer();
     }
 
+    // Ingreso del PRECIO
     printf("Ingrese el precio unitario: ");
     scanf("%f", &cal.precio);
     limpiarBuffer();
@@ -177,6 +227,7 @@ void altaProducto(FILE *archivo)
         limpiarBuffer();
     }
 
+    // Ingreso del DESCUENTO
     printf("Ingrese el descuento por unidad (en porcentaje del 0 al 100 sin incluirlo): ");
     scanf("%f", &cal.descuento);
     limpiarBuffer();
