@@ -113,6 +113,22 @@ void validarSoloLetras(char *nombre)
     }
 }
 
+void calcularImportes(Calzados *cal)
+{
+    cal->sub_total = cal->cantidad * cal->precio - cal->cantidad * cal->descuento;
+    cal->iva = cal->sub_total * IVA;
+    cal->total = cal->sub_total + cal->iva;
+}
+
+int leerOrden()
+{
+    int orden;
+
+    printf("Ingrese el nro de orden");
+    scanf("%d", &orden);
+    limpiarBuffer();
+    return orden;
+}
 // ---------------------------FUNCIONES PEDIDAS--------------------------
 //(Despues las pasamos a un archivo a parte donde estáran todas las funciones)
 
@@ -243,9 +259,7 @@ void altaProducto(FILE *archivo)
     cal.activo = 1; // Valido que el producto está activo
 
     // °Cuentas
-    cal.sub_total = cal.cantidad * cal.precio - cal.cantidad * cal.descuento;
-    cal.iva = cal.sub_total * IVA;
-    cal.total = cal.sub_total + cal.iva;
+    calcularImportes(&cal);
 
     // °Agregar datos al archivo
     fseek(archivo, (cal.orden - 1) * sizeof(Calzados), SEEK_SET);
@@ -259,7 +273,76 @@ void altaProducto(FILE *archivo)
 // 5 (BUSCAR)
 
 // 6 (MODIFICAR)
+void modificarProducto(FILE *archivo)
+{
+    Calzados cal;
+    int cantidad_nueva;
+    archivo = fopen("registros.dat", "r+b");
+    if (archivo == NULL)
+    {
+        printf("Aún no se han ingresado productos\n");
+        return;
+    }
+    int orden = leerOrden();
 
+    int encontrado = 0;
+    int validacion = 0;
+    fseek(archivo, 0, SEEK_SET);
+    while((fread(&cal, sizeof(Calzados), 1, archivo)) == 1)
+    {
+        if (orden == cal.orden)
+        {
+            encontrado = 1;
+            printf("ORDEN encontrado.\n");
+            printf("Está seguro que desea modificar los datos de la orden %d? (1 para continuar): ", orden);
+            scanf("%d", &validacion);
+            limpiarBuffer();
+            if (validacion)
+            {
+                printf("Ingrese la cantidad entera a agregar o quitar distinta de 0 (ej: 3 o -5): \n");
+                scanf("%d", &cantidad_nueva);
+                limpiarBuffer();
+
+                if (cantidad_nueva == 0)
+                {
+                    printf("Se ha ingresado una cantidad incorrecta.\n");
+                    printf("Volviendo al menu");
+                    fclose(archivo);
+                    return;
+                }
+                else if (cantidad_nueva + cal.cantidad < 0)
+                {
+                    printf("El resultado de la operacion volverá negativa la cantidad existente.\n");
+                    printf("Volviendo al menu");
+                    fclose(archivo);
+                    return;
+                }
+                
+                cal.cantidad += cantidad_nueva;
+
+                calcularImportes(&cal);
+
+                fseek(archivo, -sizeof(Calzados), SEEK_CUR);
+                fwrite(&cal, sizeof(Calzados), 1, archivo);
+                break;
+            }
+            else
+            {
+                printf("Se ha seleccionado el no querer realizar una modificacion\n");
+                fclose(archivo);
+                return;
+            }
+        }
+    }
+    if (!encontrado)
+    {
+        printf("La orden %d no se ha encontado.\n", orden);
+        fclose(archivo);
+        return;
+    }
+
+    fclose(archivo);
+}
 // 7 (BAJA LOGICA)
 
 // 8 (BAJA FISICA)
