@@ -379,8 +379,13 @@ void bajaLogica(FILE *archivo)
             if (validacion)
             {
                 cal.activo = 0;
+                fseek(archivo, -sizeof(Calzados), SEEK_CUR);
+                fwrite(&cal, sizeof(Calzados), 1, SEEK_CUR);
+
+                fseek(archivo, 0, SEEK_END);
                 int cantidad_datos = ftell(archivo) / sizeof(Calzados);
 
+                fseek(archivo, 0, SEEK_SET);
                 for (int i = 0; i < cantidad_datos; i++)
                 {
                     fread(&cal, sizeof(Calzados), 1, archivo);
@@ -403,7 +408,7 @@ void bajaLogica(FILE *archivo)
 
     if (!encontrado)
     {
-        printf("No se ha encontado el orden %d", &orden);
+        printf("No se ha encontado el orden %d", orden);
         fclose(archivo);
         return;
     }
