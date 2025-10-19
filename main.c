@@ -348,6 +348,7 @@ void modificarProducto(FILE *archivo)
 
     fclose(archivo);
 }
+// ********************** VERIFICAR QUE FUNCIONA *********************
 
 // 7 (BAJA LOGICA)
 void bajaLogica(FILE *archivo)
@@ -363,15 +364,40 @@ void bajaLogica(FILE *archivo)
     int orden = leerOrden();
 
     int encontrado = 0;
+    int validacion = 0;
     fseek(archivo, 0, SEEK_SET);
-
     while ((fread(&cal, sizeof(Calzados), 1, archivo)) == 1)
     {
         if (orden == cal.orden)
         {
             encontrado = 1;
             printf("Vendedor\tFecha\tCategoria\tCantidad\tPrecio Unitario\tDescuento\tSubtotal\tI.V.A\tTotal\tActivo");
-            printf("%10d %10d/%d/%d %10s %10d %10.2f %10.2f %10.2f %10.2f %10.2f %10d", cal.vendedor, cal.dia, cal.mes, cal.anio, cal.categoria, cal.cantidad, cal.precio, cal.descuento, cal.sub_total, cal.iva, cal.total, cal.activo);
+            printf("%10d %10d/%d/%d %10s %10d %10.2f %10.2f %10.2f %10.2f %10.2f %10d\n", cal.vendedor, cal.dia, cal.mes, cal.anio, cal.categoria, cal.cantidad, cal.precio, cal.descuento, cal.sub_total, cal.iva, cal.total, cal.activo);
+            printf("Estas seguro de querer darlo de baja? (1 para continuar): ");
+            scanf("%d", &validacion);
+
+            if (validacion)
+            {
+                cal.activo = 0;
+                int cantidad_datos = ftell(archivo) / sizeof(Calzados);
+
+                for (int i = 0; i < cantidad_datos; i++)
+                {
+                    fread(&cal, sizeof(Calzados), 1, archivo);
+                    if (cal.activo == 1)
+                    {
+                        printf("Vendedor\tFecha\tCategoria\tCantidad\tPrecio Unitario\tDescuento\tSubtotal\tI.V.A\tTotal\tActivo");
+                        printf("%10d %10d/%d/%d %10s %10d %10.2f %10.2f %10.2f %10.2f %10.2f %10d\n", cal.vendedor, cal.dia, cal.mes, cal.anio, cal.categoria, cal.cantidad, cal.precio, cal.descuento, cal.sub_total, cal.iva, cal.total, cal.activo);
+                    }
+                }
+            }
+            else
+            {
+                printf("Se ha seleccionado no querer darlo de baja.\n");
+                printf("Volviendo al menu.\n");
+                fclose(archivo);
+                return;
+            }
         }
     }
 
@@ -384,7 +410,7 @@ void bajaLogica(FILE *archivo)
 
     fclose(archivo);
 }
-// ********************** FALTA TERMINAR *********************
+// ********************** VERIFICAR QUE FUNCIONA *********************
 
 // 8 (BAJA FISICA)
 
