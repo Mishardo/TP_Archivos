@@ -139,11 +139,11 @@ void crearBinario(FILE *archivo)
 {
     if ((archivo = fopen("registro.dat", "w+b")) == NULL)
     {
-        printf("El archivo no pudo ser creado");
+        printf("El archivo no pudo ser creado\n");
     }
     else
     {
-        printf("Archivo binario creado con exito");
+        printf("Archivo binario creado con exito\n");
         fclose(archivo);
     }
 }
@@ -269,6 +269,8 @@ void altaProducto(FILE *archivo)
     // °Agregar datos al archivo
     fseek(archivo, (cal.orden - 1) * sizeof(Calzados), SEEK_SET);
     fwrite(&cal, sizeof(Calzados), 1, archivo);
+
+    printf("Se ha aniadido el producto.\n");
     fclose(archivo);
 }
 // *************FALTA TERMINAR*****************
@@ -346,6 +348,7 @@ void modificarProducto(FILE *archivo)
         return;
     }
 
+    printf("Modificacion realizada.\n");
     fclose(archivo);
 }
 // ********************** VERIFICAR QUE FUNCIONA *********************
@@ -357,7 +360,7 @@ void bajaLogica(FILE *archivo)
     archivo = fopen("registro.dat", "r+b");
     if (archivo == NULL)
     {
-        printf("No hay productos para dar de baja.");
+        printf("No hay productos para dar de baja.\n");
         return;
     }
 
@@ -381,10 +384,12 @@ void bajaLogica(FILE *archivo)
                 cal.activo = 0;
                 fseek(archivo, -sizeof(Calzados), SEEK_CUR);
                 fwrite(&cal, sizeof(Calzados), 1, archivo);
+                printf("El producto ha sido colocado como inactivo");
 
                 fseek(archivo, 0, SEEK_END);
                 int cantidad_datos = ftell(archivo) / sizeof(Calzados);
 
+                // ARREGLAR IMPRESION DE ESTOS DATOS
                 fseek(archivo, 0, SEEK_SET);
                 for (int i = 0; i < cantidad_datos; i++)
                 {
@@ -408,16 +413,74 @@ void bajaLogica(FILE *archivo)
 
     if (!encontrado)
     {
-        printf("No se ha encontado el orden %d", orden);
+        printf("No se ha encontado el orden %d\n", orden);
         fclose(archivo);
         return;
     }
 
     fclose(archivo);
 }
-// ********************** VERIFICAR QUE FUNCIONA *********************
+// ********************** FALTA ARREGLAR *********************
 
 // 8 (BAJA FISICA)
+void bajaFisica(FILE *archivo)
+{
+    Calzados cal;
+
+    archivo = fopen("registro.dat", "r+b");
+    if (archivo == NULL)
+    {
+        printf("No se pudo abrir el archivo\n");
+        return;
+    }
+
+    // -Nombre del archivo con la fecha actual-
+    char nombre_archivo[30];
+    int dia_actual, mes_actual, anio_actual;
+    obtenerFechaActual(&dia_actual, &mes_actual, &anio_actual);
+    snprintf(nombre_archivo, sizeof(nombre_archivo), "bajas_%d-%d-%d.xyz",dia_actual, mes_actual, anio_actual);
+    FILE * archivo_txt;
+    archivo_txt = fopen(nombre_archivo, "w+t");
+
+
+    fseek(archivo, 0, SEEK_END);
+    int cantidad_datos = ftell(archivo) / sizeof(Calzados);
+    fseek(archivo, 0, SEEK_SET);
+    fseek(archivo_txt, 0, SEEK_SET);
+
+    int encontrado = 0;
+    for (int i = 0; i < cantidad_datos; i++)
+    {
+        fread(&cal, sizeof(Calzados), 1, archivo);
+        if (cal.activo == 0)
+        {
+            encontrado = 1;
+            // grabado de datos en archivo de texto (ARREGLAR IMPRESION DE DATOS)
+            fprintf(archivo_txt, "Vendedor\tFecha\t\tCategoria\tCantidad\tPrecio Unitario\t\tDescuento\tSubtotal\tI.V.A\tTotal\tActivo\n");
+            fprintf(archivo_txt, "%2s %10d/%d/%d %15s %12d %22.2f %19.2f %16.2f %10.2f %10.2f %10d\n", cal.vendedor, cal.dia, cal.mes, cal.anio, cal.categoria, cal.cantidad, cal.precio, cal.descuento, cal.sub_total, cal.iva, cal.total, cal.activo);
+
+            // incializado todos los campos en cero
+            fseek(archivo, -sizeof(Calzados), SEEK_CUR);
+            Calzados cal = {0, {0}, 0, 0, 0, {0}, 0, 0, 0, 0, 0, 0, 0};
+            fwrite(&cal, sizeof(Calzados), 1, archivo);
+        }
+    }
+
+    if (!encontrado)
+    {
+        printf("No se han encontrado productos inactivos\n");
+        printf("Archivo de texto no ha sido creado.\n");
+        fclose(archivo);
+        remove(nombre_archivo);
+        return;
+    }
+
+    printf("El archivo de texto con los productos inactivos ha sido creado.\n");
+
+    fclose(archivo);
+    remove(nombre_archivo);
+}
+// ******************* FALTA ARREGLAR ******************
 
 // 9 (LISTAR TEXTO)
 
