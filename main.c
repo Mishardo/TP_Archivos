@@ -3,7 +3,7 @@
 #include <time.h>
 #include <string.h>
 
-#include "funciones.h"
+// #include "funciones.h"
 
 #define IVA 23
 
@@ -133,7 +133,7 @@ int leerOrden()
 
 char *obtenerNombreArchivo()
 {
-    char nombre[20];
+    static char nombre[20];
     int dia_actual, mes_actual, anio_actual;
     obtenerFechaActual(&dia_actual, &mes_actual, &anio_actual);
     snprintf(nombre, sizeof(nombre), "bajas_%d-%d-%d.xyz", dia_actual, mes_actual, anio_actual);
@@ -306,7 +306,7 @@ void modificarProducto(FILE *archivo)
 
     if (archivo == NULL)
     {
-        printf("Aún no se han ingresado productos\n");
+        printf("No se ha podido abrir el archivo.\n");
         return;
     }
 
@@ -392,11 +392,12 @@ void bajaLogica(FILE *archivo)
     archivo = fopen("registro.dat", "r+b");
     if (archivo == NULL)
     {
-        printf("No hay productos para dar de baja.\n");
+        printf("No se ha podidio abir el archivo.\n");
         return;
     }
 
     // Validar que haya productos
+    fseek(archivo, 0, SEEK_END);
     int cantidad_datos = ftell(archivo) / sizeof(Calzados);
     if (cantidad_datos == 0)
     {
@@ -407,6 +408,7 @@ void bajaLogica(FILE *archivo)
 
     // Validar que haya productos para dar de baja
     int activo_encontado = 0;
+    fseek(archivo, 0, SEEK_SET);
     for (int i = 0; i < cantidad_datos; i++)
     {
         fread(&cal, sizeof(Calzados), 1, archivo);
@@ -446,7 +448,7 @@ void bajaLogica(FILE *archivo)
                 cal.activo = 0;
                 fseek(archivo, -sizeof(Calzados), SEEK_CUR);
                 fwrite(&cal, sizeof(Calzados), 1, archivo);
-                printf("El producto ha sido colocado como inactivo");
+                printf("El producto ha sido colocado como inactivo\n");
 
                 // Mostrar los productos que quedaron activos
                 fseek(archivo, 0, SEEK_SET);
