@@ -48,6 +48,7 @@ void validarFecha(Calzados *cal)
     int dia_actual, mes_actual, anio_actual;
     obtenerFechaActual(&dia_actual, &mes_actual, &anio_actual);
 
+    // Validaciones
     while (cal->anio > anio_actual)
     {
         printf("El anio es superior al anio acutal.\n");
@@ -116,7 +117,7 @@ void validarSoloLetras(char *nombre)
 void calcularImportes(Calzados *cal)
 {
     cal->sub_total = cal->cantidad * cal->precio - cal->cantidad * cal->descuento;
-    cal->iva = cal->sub_total * IVA/100;
+    cal->iva = cal->sub_total * IVA / 100;
     cal->total = cal->sub_total + cal->iva;
 }
 
@@ -129,6 +130,16 @@ int leerOrden()
     limpiarBuffer();
     return orden;
 }
+
+char *obtenerNombreArchivo()
+{
+    char nombre[20];
+    int dia_actual, mes_actual, anio_actual;
+    obtenerFechaActual(&dia_actual, &mes_actual, &anio_actual);
+    snprintf(nombre, sizeof(nombre), "bajas_%d-%d-%d.xyz", dia_actual, mes_actual, anio_actual);
+
+    return nombre;
+}
 // ---------------------------FUNCIONES PEDIDAS--------------------------
 //(Despues las pasamos a un archivo a parte donde estáran todas las funciones)
 
@@ -137,7 +148,9 @@ int leerOrden()
 // 2 (CREAR ARCHIVO BINARIO)
 void crearBinario(FILE *archivo)
 {
-    if ((archivo = fopen("registro.dat", "w+b")) == NULL)
+    archivo = fopen("registro.dat", "w+b");
+
+    if (archivo == NULL)
     {
         printf("El archivo no pudo ser creado\n");
     }
@@ -153,6 +166,11 @@ void altaProducto(FILE *archivo)
 {
     Calzados cal;
     archivo = fopen("registro.dat", "r+b");
+    if (archivo == NULL)
+    {
+        printf("No se ha podido abir el archivo.\n");
+        return;
+    }
 
     // °°°°Ingreso de datos y validaciones°°°°
     // Ingreso del ORDEN
@@ -185,11 +203,11 @@ void altaProducto(FILE *archivo)
         }
 
         // Validar que no exista previamente
-        // Seguramente funcione mal
-        fseek(archivo, (orden_temporal - 1) * sizeof(Calzados), SEEK_SET);
-        if ((fread(&cal, sizeof(Calzados), 1, archivo)) == 1)
+        Calzados temporal;
+        fseek(archivo, (orden_temporal - 1) * sizeof(Calzados), SEEK_SET); // Me paro en la linea en donde estaría al
+        if ((fread(&temporal, sizeof(Calzados), 1, archivo)) == 1)         // fread va a almacenar los datos en temp y dará 1 si existen los datos.
         {
-            if (orden_temporal == cal.orden)
+            if (orden_temporal == temporal.orden && temporal.activo == 1)
             {
                 printf("El nro de orden ingresado se encuentra ocupado.\n");
                 printf("Ingrese otro nro: ");
@@ -268,7 +286,7 @@ void altaProducto(FILE *archivo)
 
     // °Agregar datos al archivo
     fseek(archivo, (cal.orden - 1) * sizeof(Calzados), SEEK_SET);
-    fwrite(&cal, sizeof(Calzados), 1, archivo);
+    fwrite(&cal, sizeof(Calzados), 1, archivo); // escribo los datos que están en 'cal' en el archivo
 
     printf("Se ha aniadido el producto.\n");
     fclose(archivo);
@@ -285,26 +303,40 @@ void modificarProducto(FILE *archivo)
     Calzados cal;
     int cantidad_nueva;
     archivo = fopen("registro.dat", "r+b");
+
     if (archivo == NULL)
     {
         printf("Aún no se han ingresado productos\n");
         return;
     }
+
+    // Validar que haya productos
+    fseek(archivo, 0, SEEK_END);
+    if ((ftell(archivo) / sizeof(Calzados)) == 0)
+    {
+        printf("No se han ingresado productos.\n");
+        fclose(archivo);
+        return;
+    }
+
+    // Leer la orden a buscar
     int orden = leerOrden();
 
-    int encontrado = 0;
+    int orden_encontrada = 0;
     int validacion = 0;
     fseek(archivo, 0, SEEK_SET);
     while ((fread(&cal, sizeof(Calzados), 1, archivo)) == 1)
     {
         if (orden == cal.orden)
         {
-            encontrado = 1;
+            orden_encontrada = 1;
             printf("ORDEN encontrado.\n");
+            // Validar que se quiera realizar la modificacion
             printf("Esta seguro que desea modificar los datos de la orden %d? (1 para continuar): ", orden);
             scanf("%d", &validacion);
             limpiarBuffer();
-            if (validacion)
+
+            if (validacion == 1)
             {
                 printf("Ingrese la cantidad entera a agregar o quitar distinta de 0 (ej: 3 o -5): ");
                 scanf("%d", &cantidad_nueva);
@@ -341,7 +373,7 @@ void modificarProducto(FILE *archivo)
             }
         }
     }
-    if (!encontrado)
+    if (!orden_encontrada)
     {
         printf("La orden %d no se ha encontado.\n", orden);
         fclose(archivo);
@@ -364,41 +396,84 @@ void bajaLogica(FILE *archivo)
         return;
     }
 
+    // Validar que haya productos
+    int cantidad_datos = ftell(archivo) / sizeof(Calzados);
+    if (cantidad_datos == 0)
+    {
+        printf("No se han ingresado productos.\n");
+        fclose(archivo);
+        return;
+    }
+
+    // Validar que haya productos para dar de baja
+    int activo_encontado = 0;
+    for (int i = 0; i < cantidad_datos; i++)
+    {
+        fread(&cal, sizeof(Calzados), 1, archivo);
+        if (cal.activo == 1)
+        {
+            activo_encontado = 1;
+        }
+    }
+    if (!activo_encontado)
+    {
+        printf("No se han encontardo productos activos.\n");
+        fclose(archivo);
+        return;
+    }
+
+    // Lectura de la orden a buscar
     int orden = leerOrden();
 
-    int encontrado = 0;
+    int orden_encontrada = 0;
     int validacion = 0;
     fseek(archivo, 0, SEEK_SET);
     while ((fread(&cal, sizeof(Calzados), 1, archivo)) == 1)
     {
         if (orden == cal.orden)
         {
-            encontrado = 1;
+            orden_encontrada = 1;
+            // Datos de la orden encontada
             printf("Vendedor\tFecha\t\tCategoria\tCantidad\tPrecio Unitario\t\tDescuento\tSubtotal\tI.V.A\tTotal\tActivo\n");
             printf("%2s %10d/%d/%d %15s %12d %22.2f %19.2f %16.2f %10.2f %10.2f %10d\n", cal.vendedor, cal.dia, cal.mes, cal.anio, cal.categoria, cal.cantidad, cal.precio, cal.descuento, cal.sub_total, cal.iva, cal.total, cal.activo);
+            // Validacion de querer darlo de baja
             printf("Estas seguro de querer darlo de baja? (1 para continuar): ");
             scanf("%d", &validacion);
 
-            if (validacion)
+            if (validacion == 1)
             {
+                // Colocacion y reescritura del producto dado de baja
                 cal.activo = 0;
                 fseek(archivo, -sizeof(Calzados), SEEK_CUR);
                 fwrite(&cal, sizeof(Calzados), 1, archivo);
                 printf("El producto ha sido colocado como inactivo");
 
-                fseek(archivo, 0, SEEK_END);
-                int cantidad_datos = ftell(archivo) / sizeof(Calzados);
-
-                // ARREGLAR IMPRESION DE ESTOS DATOS
+                // Mostrar los productos que quedaron activos
                 fseek(archivo, 0, SEEK_SET);
+                activo_encontado = 0;
+                int primera_impresion = 0;
                 for (int i = 0; i < cantidad_datos; i++)
                 {
                     fread(&cal, sizeof(Calzados), 1, archivo);
                     if (cal.activo == 1)
                     {
-                        printf("Vendedor\tFecha\tCategoria\tCantidad\tPrecio Unitario\tDescuento\tSubtotal\tI.V.A\tTotal\tActivo\n");
-                        printf("%10s %10d/%d/%d %10s %10d %10.2f %10.2f %10.2f %10.2f %10.2f %10d\n", cal.vendedor, cal.dia, cal.mes, cal.anio, cal.categoria, cal.cantidad, cal.precio, cal.descuento, cal.sub_total, cal.iva, cal.total, cal.activo);
+                        activo_encontado = 1;
+                        // Mostrar el encabezado solo una vez
+                        if (!primera_impresion)
+                        {
+                            printf("Orden\tVendedor\tFecha\tCategoria\tCantidad\tPrecio Unitario\tDescuento\tSubtotal\tI.V.A\tTotal\tActivo\n");
+                            primera_impresion = 1;
+                        }
+                        printf("%2d %10s %10d/%d/%d %10s %10d %10.2f %10.2f %10.2f %10.2f %10.2f %10d\n", cal.orden, cal.vendedor, cal.dia, cal.mes, cal.anio, cal.categoria, cal.cantidad, cal.precio, cal.descuento, cal.sub_total, cal.iva, cal.total, cal.activo);
                     }
+                }
+
+                // En caso de que no haya quedado al menos un producto activo
+                if (!activo_encontado)
+                {
+                    printf("No quedaron productos activos.\n");
+                    fclose(archivo);
+                    return;
                 }
             }
             else
@@ -411,7 +486,8 @@ void bajaLogica(FILE *archivo)
         }
     }
 
-    if (!encontrado)
+    // Si orden_encontada se mantuvo en 0, !0 = 1
+    if (!orden_encontrada)
     {
         printf("No se ha encontado el orden %d\n", orden);
         fclose(archivo);
@@ -420,7 +496,7 @@ void bajaLogica(FILE *archivo)
 
     fclose(archivo);
 }
-// ********************** FALTA ARREGLAR *********************
+// ********************** VERIFICAR QUE FUNCIONA *********************
 
 // 8 (BAJA FISICA)
 void bajaFisica(FILE *archivo)
@@ -434,17 +510,22 @@ void bajaFisica(FILE *archivo)
         return;
     }
 
-    // -Nombre del archivo con la fecha actual-
-    char nombre_archivo[30];
-    int dia_actual, mes_actual, anio_actual;
-    obtenerFechaActual(&dia_actual, &mes_actual, &anio_actual);
-    snprintf(nombre_archivo, sizeof(nombre_archivo), "bajas_%d-%d-%d.xyz",dia_actual, mes_actual, anio_actual);
-    FILE * archivo_txt;
-    archivo_txt = fopen(nombre_archivo, "w+t");
-
-
+    // Validar que no hay productos
     fseek(archivo, 0, SEEK_END);
     int cantidad_datos = ftell(archivo) / sizeof(Calzados);
+    if (cantidad_datos == 0)
+    {
+        printf("No se han ingresado productos.\n");
+        fclose(archivo);
+        return;
+    }
+
+    // Creacion del archivo con la fecha actual (Ver si lo puedo optimizar)
+    char *nombre_archivo;
+    nombre_archivo = obtenerNombreArchivo();
+    FILE *archivo_txt;
+    archivo_txt = fopen(nombre_archivo, "wt");
+
     fseek(archivo, 0, SEEK_SET);
     fseek(archivo_txt, 0, SEEK_SET);
 
@@ -456,8 +537,8 @@ void bajaFisica(FILE *archivo)
         {
             encontrado = 1;
             // grabado de datos en archivo de texto (ARREGLAR IMPRESION DE DATOS)
-            fprintf(archivo_txt, "Vendedor\tFecha\t\tCategoria\tCantidad\tPrecio Unitario\t\tDescuento\tSubtotal\tI.V.A\tTotal\tActivo\n");
-            fprintf(archivo_txt, "%2s %10d/%d/%d %15s %12d %22.2f %19.2f %16.2f %10.2f %10.2f %10d\n", cal.vendedor, cal.dia, cal.mes, cal.anio, cal.categoria, cal.cantidad, cal.precio, cal.descuento, cal.sub_total, cal.iva, cal.total, cal.activo);
+            fprintf(archivo_txt, "Orden\tVendedor\tFecha\t\tCategoria\tCantidad\tPrecio Unitario\t\tDescuento\tSubtotal\tI.V.A\tTotal\tActivo\n");
+            fprintf(archivo_txt, "%2d %2s %10d/%d/%d %15s %12d %22.2f %19.2f %16.2f %10.2f %10.2f %10d\n", cal.orden, cal.vendedor, cal.dia, cal.mes, cal.anio, cal.categoria, cal.cantidad, cal.precio, cal.descuento, cal.sub_total, cal.iva, cal.total, cal.activo);
 
             // incializado todos los campos en cero
             fseek(archivo, -sizeof(Calzados), SEEK_CUR);
