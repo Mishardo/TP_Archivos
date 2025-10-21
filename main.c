@@ -126,11 +126,7 @@ void validarSoloLetras(char *nombre)
     char c;
     for (int i = 0; nombre[i] != '\n' && nombre[i] != '\0'; i++)
     {
-        // Igual creo que el scanf si le metes espacio te corta la cadena. la otra opcion sin el fgets era scanf([^\n])
         c = nombre[i];
-
-        // Me estuve matantado pero creo que lo tengo
-        // Exacto, que la 1ra letra la tenga en mayus, el resto en minuscula y solo letras
 
         // Comparo si está entre a y z
         if (c >= 'a' && c <= 'z')
@@ -159,7 +155,7 @@ void validarSoloLetras(char *nombre)
             printf("Intente de nuevo: ");
             scanf("%s", nombre);
             limpiarBuffer();
-            i = -1; // Como se ingresa nuevo texto, el ciclo debe volver a empezar
+            i = -1; // Como se ingresa un nuevo texto, el ciclo debe volver a empezar
             continue;
         }
     }
@@ -351,7 +347,7 @@ void altaProducto(FILE *archivo)
     printf("Se ha aniadido el producto.\n");
     fclose(archivo);
 }
-// ************* FALTA ARREGLAR *****************
+// ************* VERIFICAR QUE FUNCIONA *****************
 
 // 4 (LISTAR BINARIO)
 
