@@ -43,35 +43,83 @@ void obtenerFechaActual(int *dia, int *mes, int *anio)
     *anio = fechaLocal->tm_year + 1900; // Años desde 1900
 }
 
-void validarFecha(Calzados *cal)
+void validarFecha(Calzados *cal, FILE *archivo)
 {
     int dia_actual, mes_actual, anio_actual;
     obtenerFechaActual(&dia_actual, &mes_actual, &anio_actual);
 
-    // Validaciones
-    while (cal->anio > anio_actual)
+    // Validar que la fecha no supere a la fecha actual
+    int validacion = 0;
+    do
     {
-        printf("El anio es superior al anio acutal.\n");
-        printf("Vuelva a intentarlo: ");
-        scanf("%d", &cal->anio);
-        limpiarBuffer();
-    }
+        while (cal->anio > anio_actual)
+        {
+            printf("El anio es superior al anio acutal.\n");
+            printf("Vuelva a intentarlo: ");
+            scanf("%d", &cal->anio);
+            limpiarBuffer();
+        }
 
-    while (cal->mes > mes_actual)
-    {
-        printf("El mes ingresado es superior al mes actual.\n");
-        printf("Intente de nuevo: ");
-        scanf("%d", &cal->mes);
-        limpiarBuffer();
-    }
+        while (cal->mes > mes_actual)
+        {
+            printf("El mes ingresado es superior al mes actual.\n");
+            printf("Intente de nuevo: ");
+            scanf("%d", &cal->mes);
+            limpiarBuffer();
+        }
 
-    while (cal->dia > dia_actual)
-    {
-        printf("El dia ingresado es superior al dia acutal.\n");
-        printf("Ingrese de nuevo: ");
-        scanf("%d", &cal->dia);
-        limpiarBuffer();
-    }
+        while (cal->dia > dia_actual)
+        {
+            printf("El dia ingresado es superior al dia acutal.\n");
+            printf("Ingrese de nuevo: ");
+            scanf("%d", &cal->dia);
+            limpiarBuffer();
+        }
+
+        // Validar que la fecha no sea anterior a la fecha base (la primera fecha ingresada en el programa)
+        static int primer_orden = 0;
+        Calzados primerIngreso;
+
+        if (primer_orden == 0)
+        {
+            primer_orden = cal->orden;
+        }
+        else
+        {
+            fseek(archivo, (primer_orden - 1) * sizeof(Calzados), SEEK_SET);
+            fread(&primerIngreso, sizeof(Calzados), 1, archivo);
+
+            if (cal->anio < primerIngreso.anio)
+            {
+                printf("El anio ingresado es inferior al 1er anio registrado.\n");
+                printf("Intente de nuevo: ");
+                scanf("%d", cal->anio);
+                limpiarBuffer();
+                continue; //saltará al while en donde evaluará la validacion, como sigue en 0 el codigo volverá a empezar desde la 1ra validacion
+            }
+
+            if (cal->mes < primerIngreso.mes)
+            {
+                printf("El mes ingresado es inferior al 1er mes registrado.\n");
+                printf("Intente de nuevo: ");
+                scanf("%d", cal->mes);
+                limpiarBuffer();
+                continue; //saltará al while en donde evaluará la validacion, como sigue en 0 el codigo volverá a empezar desde la 1ra validacion
+            }
+
+            if (cal->dia < primerIngreso.dia)
+            {
+                printf("El dia ingresado es inferior al 1er dia registrado.\n");
+                printf("Intente de nuevo: ");
+                scanf("%d", cal->dia);
+                limpiarBuffer();
+                continue; //saltará al while en donde evaluará la validacion, como sigue en 0 el codigo volverá a empezar desde la 1ra validacion
+            }
+
+            // Si pasó todas las validaciones, ahora entonces se puede decir que la fecha ingresada es correcta.
+            validacion = 1;
+        }
+    } while (!validacion);
 }
 
 void validarSoloLetras(char *nombre)
@@ -79,8 +127,12 @@ void validarSoloLetras(char *nombre)
     char c;
     for (int i = 0; nombre[i] != '\n' && nombre[i] != '\0'; i++)
     {
+        // Igual creo que el scanf si le metes espacio te corta la cadena. la otra opcion sin el fgets era scanf([^\n])
         c = nombre[i];
 
+        // Me estuve matantado pero creo que lo tengo
+        // Exacto, que la 1ra letra la tenga en mayus, el resto en minuscula y solo letras
+    
         // Comparo si está entre a y z
         if (c >= 'a' && c <= 'z')
         {
@@ -123,11 +175,18 @@ void calcularImportes(Calzados *cal)
 
 int leerOrden()
 {
-    int orden;
+    int orden = 0;
 
     printf("Ingrese el nro de orden: ");
     scanf("%d", &orden);
     limpiarBuffer();
+    while (orden <= 0)
+    {
+        printf("El nro de orden ingresado no es correcto.\n");
+        printf("Intente de nuevo: ");
+        scanf("%d", &orden);
+    }
+
     return orden;
 }
 
@@ -197,7 +256,7 @@ void altaProducto(FILE *archivo)
         {
             printf("El numero ingresado no puede ser igual o menor que 0.\n");
             printf("Vuelva a intentarlo: ");
-            scanf("%d", &orden_temporal);
+            lectura = scanf("%d", &orden_temporal);
             limpiarBuffer();
             continue;
         }
@@ -211,7 +270,7 @@ void altaProducto(FILE *archivo)
             {
                 printf("El nro de orden ingresado se encuentra ocupado.\n");
                 printf("Ingrese otro nro: ");
-                scanf("%d", &orden_temporal);
+                lectura = scanf("%d", &orden_temporal);
                 limpiarBuffer();
                 continue;
             }
@@ -224,15 +283,15 @@ void altaProducto(FILE *archivo)
 
     // Ingreso del NOMBRE VENDEDOR
     printf("Nombre del vendedor/a: ");
-    scanf("%s", cal.vendedor);
+    scanf("%s", cal.vendedor); //Suponiendo que solo ingresa un nombre y no varios
     limpiarBuffer();
     validarSoloLetras(cal.vendedor);
 
-    // Ingreso de la FECHA (Falta validar el caso base)
+    // Ingreso de la FECHA (Erorr al momento de validar)
     printf("Fecha de ingreso del producto (No puede superar la fecha actual): ");
     scanf("%d %d %d", &cal.dia, &cal.mes, &cal.anio);
     limpiarBuffer();
-    validarFecha(&cal);
+    validarFecha(&cal, archivo);
 
     // Ingreso de la CATEGORIA
     printf("Ahora, ingrese la categoria del calzado: ");
@@ -291,7 +350,7 @@ void altaProducto(FILE *archivo)
     printf("Se ha aniadido el producto.\n");
     fclose(archivo);
 }
-// *************FALTA TERMINAR*****************
+// ************* FALTA ARREGLAR *****************
 
 // 4 (LISTAR BINARIO)
 
@@ -532,14 +591,18 @@ void bajaFisica(FILE *archivo)
     fseek(archivo_txt, 0, SEEK_SET);
 
     int encontrado = 0;
+    int primera_impresion = 0;
     for (int i = 0; i < cantidad_datos; i++)
     {
         fread(&cal, sizeof(Calzados), 1, archivo);
         if (cal.activo == 0)
         {
             encontrado = 1;
-            // grabado de datos en archivo de texto (ARREGLAR IMPRESION DE DATOS)
-            fprintf(archivo_txt, "Orden\tVendedor\tFecha\t\tCategoria\tCantidad\tPrecio Unitario\t\tDescuento\tSubtotal\tI.V.A\tTotal\tActivo\n");
+            if (!primera_impresion)
+            {
+                fprintf(archivo_txt, "Orden\tVendedor\tFecha\t\tCategoria\tCantidad\tPrecio Unitario\t\tDescuento\tSubtotal\tI.V.A\tTotal\tActivo\n");
+                primera_impresion = 1;
+            }
             fprintf(archivo_txt, "%2d %2s %10d/%d/%d %15s %12d %22.2f %19.2f %16.2f %10.2f %10.2f %10d\n", cal.orden, cal.vendedor, cal.dia, cal.mes, cal.anio, cal.categoria, cal.cantidad, cal.precio, cal.descuento, cal.sub_total, cal.iva, cal.total, cal.activo);
 
             // incializado todos los campos en cero
