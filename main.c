@@ -197,7 +197,83 @@ char *obtenerNombreArchivo()
 // ---------------------------FUNCIONES PEDIDAS--------------------------
 //(Despues las pasamos a un archivo a parte donde estáran todas las funciones)
 
-// 1 (MENU)
+#include <stdio.h>
+
+//MENU
+void menu() {
+    int operacion;
+    char listado;
+    char busca_venta;
+
+    do {
+        printf("Ingrese el numero de la accion que desea ejecutar:\n");
+        printf("    1. Registrar nuevos vendedores.\n");
+        printf("    2. Crear un nuevo archivo de registros de ventas.\n");
+        printf("    3. Listar el contenido del archivo con sus respectivos títulos de columna.\n");
+        printf("    4. Buscar datos de una venta.\n");
+        printf("    5. Modificar el importe del precio unitario por numero de ID/orden.\n");
+        printf("    6. Baja logica de un vendedor buscando por su numero de orden.\n");
+        printf("    7. Baja fisica de los vendedores inactivos.\n");
+        printf("    8. Listar el archivo con las bajas fisicas realizadas.\n");
+        scanf("%d", &operacion);
+
+        if (operacion < 1 || operacion > 8)
+            printf("Opcion invalida. Ingrese un número entre 1 y 8.\n");
+
+    } while (operacion < 1 || operacion > 8);
+
+    switch (operacion) {
+        case 1:
+            crearBinario("registro.dat");
+            break;
+        case 2:
+            altaProducto("registro.dat");
+        case 3:
+            do {
+                printf("\nIndique como desea listar:\n");
+                printf("a) Listar todos (activos e inactivos)\n");
+                printf("b) Listar por categoría ingresada\n");
+                printf("Ingrese una opcion (a/b): ");
+                scanf(" %c", &listado);
+
+                if ((listado != 'a' && listado != 'A') &&
+                    (listado != 'b' && listado != 'B'))
+                    printf("Opcion invalida. Ingrese a o b.\n");
+
+            } while ((listado != 'a' && listado != 'A') && (listado != 'b' && listado != 'B'));
+
+            if ((listado == 'a' || listado == 'A')) lista_todos("registro.dat");
+            if ((listado == 'b' || listado == 'B')) lista_categoria("registro.dat");
+            break;
+        case 4:
+            do {
+                printf("\nIndique como desea buscar:\n");
+                printf("c) Buscar por número de orden.\n");
+                printf("d) Buscar por nombre del vendedor.\n");
+                printf("Ingrese una opcion (c/d): ");
+                scanf(" %c", &busca_venta);
+
+                if ((busca_venta != 'c' && busca_venta != 'C') &&
+                    (busca_venta != 'd' && busca_venta != 'D'))
+                    printf("Opcion invalida. Ingrese c o d.\n");
+
+            } while ((busca_venta != 'c' && busca_venta != 'C') && (busca_venta != 'd' && busca_venta != 'D'));
+
+            if ((busca_venta == 'c' || busca_venta == 'C')) busca_venta_por_numero("registro.dat");
+            if ((busca_venta == 'd' || busca_venta == 'D')) busca_venta_por_nombre("registro.dat");
+            break;
+        case 5:
+            modificarProducto("registro.dat");
+            break;
+        case 6:
+            bajaLogica("registro.dat");
+            break;
+        case 7:
+            bajaFisica("registro.dat");
+        default:
+            break;
+    }
+}
 
 // 2 (CREAR ARCHIVO BINARIO)
 void crearBinario(FILE *archivo)
