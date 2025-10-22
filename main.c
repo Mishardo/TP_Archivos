@@ -43,6 +43,56 @@ void obtenerFechaActual(int *dia, int *mes, int *anio)
     *anio = (fechaLocal->tm_year + 1900) % 100; // tm_year: años desde 1900, se suma 1900 para obtener el año real y se lo reduce a dos digitos con % 100
 }
 
+int encontrarMenorFecha(FILE *archivo)
+{
+    Calzados cal;
+    int anio_minimo = 9999;
+    int mes_minimo = 9999;
+    int dia_minimo = 9999;
+
+    fseek(archivo, 0, SEEK_END);
+    int cantidad_datos = ftell(archivo) / sizeof(Calzados);
+
+    int anio_encontrado = 0;
+    fseek(archivo, 0, SEEK_SET);
+    for (int i = 0; i < cantidad_datos; i++)
+    {
+        fread(&cal, sizeof(Calzados), 1, archivo); // Almaceno los datos en 'cal'
+
+        if (cal.anio < anio_minimo && cal.anio != 0)
+        {
+            anio_minimo = cal.anio;
+            anio_encontrado = 1; // Si lo encontró, lo valido. Sino, significa que no existe otro producto así que retornará 0 el nro_orden
+        }
+    }
+
+    fseek(archivo, 0, SEEK_SET);
+    for (int i = 0; i < cantidad_datos && anio_encontrado == 1; i++)
+    {
+        fread(&cal, sizeof(Calzados), 1, archivo);
+
+        if (cal.mes < mes_minimo && cal.anio == anio_minimo) // Verifico que ese mes minimo contenga su anio correspondiente y no cualquier anio.
+        {
+            mes_minimo = cal.mes;
+        }
+    }
+
+    int orden = 0;
+    fseek(archivo, 0, SEEK_SET);
+    for (int i = 0; i < cantidad_datos && anio_encontrado == 1; i++)
+    {
+        fread(&cal, sizeof(Calzados), 1, archivo);
+
+        if (cal.dia < dia_minimo && cal.mes == mes_minimo && cal.anio == anio_minimo) // Misma idea pero añadiendo el mes
+        {
+            dia_minimo = cal.dia;
+            orden = cal.orden; // Una vez obtenida la fecha, asigno la orden correspondiente
+        }
+    }
+
+    return orden; // Retorno el valor encontrado
+}
+
 void validarFecha(Calzados *cal, FILE *archivo)
 {
     int dia_actual, mes_actual, anio_actual;
@@ -80,12 +130,35 @@ void validarFecha(Calzados *cal, FILE *archivo)
         static int primer_orden = 0;
         Calzados primerIngreso;
 
+        Calzados temporal;
+        int orden_encontrado = 0;
         if (primer_orden == 0)
         {
             primer_orden = cal->orden;
         }
         else
         {
+            // Valido que la 'orden' siga existiendo debido a que en bajaLogica pueden dar de baja justo la orden que está siendo usada como fecha base
+            fseek(archivo, 0, SEEK_SET);
+            while ((fread(&temporal, sizeof(Calzados), 1, archivo)) == 1)
+            {
+                if (primer_orden == temporal.orden)
+                {
+                    orden_encontrado = 1;
+                    break;
+                }
+            }
+            if (!orden_encontrado)
+            {
+                primer_orden = encontrarMenorFecha(archivo); // Si no encontró la orden, debe asignar una nueva orden con la menor fecha registrada
+                // Si la función retornó 0, debo asegurar que se le asigne el nro de orden que ingresó el usuario
+                if (primer_orden == 0)
+                {
+                    primer_orden = cal->orden;
+                    break; // Rompo el do-while para que de por válido el ingreso de la fecha base
+                }
+            }
+
             fseek(archivo, (primer_orden - 1) * sizeof(Calzados), SEEK_SET);
             fread(&primerIngreso, sizeof(Calzados), 1, archivo);
 
@@ -116,7 +189,7 @@ void validarFecha(Calzados *cal, FILE *archivo)
                 continue; // saltará al while en donde evaluará la validacion, como sigue en 0 el codigo volverá a empezar desde la 1ra validacion
             }
         }
-        // Si pasó todas las validaciones, ahora entonces se puede decir que la fecha ingresada es correcta.
+        // Si pasó todas las validaciones o es el 1er producto ingresado, dará el OK dando por válida la fecha.
         validacion = 1;
     } while (!validacion);
 }
