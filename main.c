@@ -35,12 +35,62 @@ void limpiarBuffer()
 
 void obtenerFechaActual(int *dia, int *mes, int *anio)
 {
-    time_t t = time(NULL);
-    struct tm *fechaLocal = localtime(&t);
+    time_t t = time(NULL);                 // Obtiene el tiempo actual en segundos desde la época (1970-01-01)
+    struct tm *fechaLocal = localtime(&t); // Convierte ese tiempo en una estructura tm con la fecha y hora local
 
-    *dia = fechaLocal->tm_mday;
-    *mes = fechaLocal->tm_mon + 1;              // Los meses van de 0 a 11, por eso +1
-    *anio = (fechaLocal->tm_year + 1900) % 100; // Años desde 1900 pero redondeado a solo dos digitos
+    *dia = fechaLocal->tm_mday;                 // tm_mday: día del mes
+    *mes = fechaLocal->tm_mon + 1;              // tm_mon: mes del año (0-11), por eso se suma 1
+    *anio = (fechaLocal->tm_year + 1900) % 100; // tm_year: años desde 1900, se suma 1900 para obtener el año real y se lo reduce a dos digitos con % 100
+}
+
+int encontrarMenorFecha(FILE *archivo)
+{
+    Calzados cal;
+    int anio_minimo = 9999;
+    int mes_minimo = 9999;
+    int dia_minimo = 9999;
+
+    fseek(archivo, 0, SEEK_END);
+    int cantidad_datos = ftell(archivo) / sizeof(Calzados);
+
+    int anio_encontrado = 0;
+    fseek(archivo, 0, SEEK_SET);
+    for (int i = 0; i < cantidad_datos; i++)
+    {
+        fread(&cal, sizeof(Calzados), 1, archivo); // Almaceno los datos en 'cal'
+
+        if (cal.anio < anio_minimo && cal.anio != 0)
+        {
+            anio_minimo = cal.anio;
+            anio_encontrado = 1; // Si lo encontró, lo valido. Sino, significa que no existe otro producto así que retornará 0 el nro_orden
+        }
+    }
+
+    fseek(archivo, 0, SEEK_SET);
+    for (int i = 0; i < cantidad_datos && anio_encontrado == 1; i++)
+    {
+        fread(&cal, sizeof(Calzados), 1, archivo);
+
+        if (cal.mes < mes_minimo && cal.anio == anio_minimo) // Verifico que ese mes minimo contenga su anio correspondiente y no cualquier anio.
+        {
+            mes_minimo = cal.mes;
+        }
+    }
+
+    int orden = 0;
+    fseek(archivo, 0, SEEK_SET);
+    for (int i = 0; i < cantidad_datos && anio_encontrado == 1; i++)
+    {
+        fread(&cal, sizeof(Calzados), 1, archivo);
+
+        if (cal.dia < dia_minimo && cal.mes == mes_minimo && cal.anio == anio_minimo) // Misma idea pero añadiendo el mes
+        {
+            dia_minimo = cal.dia;
+            orden = cal.orden; // Una vez obtenida la fecha, asigno la orden correspondiente
+        }
+    }
+
+    return orden; // Retorno el valor encontrado
 }
 
 void validarFecha(Calzados *cal, FILE *archivo)
@@ -54,7 +104,7 @@ void validarFecha(Calzados *cal, FILE *archivo)
     {
         while (cal->anio > anio_actual)
         {
-            printf("El anio es superior al anio acutal.\n");
+            printf("El anio es superior al anio actual (FECHA ACTUAL: %d/%d/%d).\n", dia_actual, mes_actual, anio_actual);
             printf("Vuelva a intentarlo ingresando un anio igual o inferior al actual: ");
             scanf("%d", &cal->anio);
             limpiarBuffer();
@@ -62,7 +112,7 @@ void validarFecha(Calzados *cal, FILE *archivo)
 
         while (cal->mes > mes_actual && cal->anio == anio_actual)
         {
-            printf("El mes ingresado es superior al mes actual.\n");
+            printf("El mes ingresado es superior al mes actual (FECHA ACTUAL: %d/%d/%d).\n", dia_actual, mes_actual, anio_actual);
             printf("Intente de nuevo ingresando un mes igual o inferior al actual: ");
             scanf("%d", &cal->mes);
             limpiarBuffer();
@@ -70,7 +120,7 @@ void validarFecha(Calzados *cal, FILE *archivo)
 
         while (cal->dia > dia_actual && cal->mes == mes_actual && cal->anio == anio_actual)
         {
-            printf("El dia ingresado es superior al dia acutal.\n");
+            printf("El dia ingresado es superior al dia acutal (FECHA ACTUAL: %d/%d/%d).\n", dia_actual, mes_actual, anio_actual);
             printf("Ingrese de nuevo un dia igual o inferior al actual: ");
             scanf("%d", &cal->dia);
             limpiarBuffer();
@@ -80,18 +130,41 @@ void validarFecha(Calzados *cal, FILE *archivo)
         static int primer_orden = 0;
         Calzados primerIngreso;
 
+        Calzados temporal;
+        int orden_encontrado = 0;
         if (primer_orden == 0)
         {
             primer_orden = cal->orden;
         }
         else
         {
+            // Valido que la 'orden' siga existiendo debido a que en bajaLogica pueden dar de baja justo la orden que está siendo usada como fecha base
+            fseek(archivo, 0, SEEK_SET);
+            while ((fread(&temporal, sizeof(Calzados), 1, archivo)) == 1)
+            {
+                if (primer_orden == temporal.orden)
+                {
+                    orden_encontrado = 1;
+                    break;
+                }
+            }
+            if (!orden_encontrado)
+            {
+                primer_orden = encontrarMenorFecha(archivo); // Si no encontró la orden, debe asignar una nueva orden con la menor fecha registrada
+                // Si la función retornó 0, debo asegurar que se le asigne el nro de orden que ingresó el usuario
+                if (primer_orden == 0)
+                {
+                    primer_orden = cal->orden;
+                    break; // Rompo el do-while para que de por válido el ingreso de la fecha base
+                }
+            }
+
             fseek(archivo, (primer_orden - 1) * sizeof(Calzados), SEEK_SET);
             fread(&primerIngreso, sizeof(Calzados), 1, archivo);
 
             if (cal->anio < primerIngreso.anio)
             {
-                printf("El anio ingresado es inferior al 1er anio registrado.\n");
+                printf("El anio ingresado es inferior al 1er anio registrado (FECHA BASE: %d/%d/%d).\n", primerIngreso.dia, primerIngreso.mes, primerIngreso.anio);
                 printf("Intente de nuevo ingresando un anio supeior o igual: ");
                 scanf("%d", &cal->anio);
                 limpiarBuffer();
@@ -100,7 +173,7 @@ void validarFecha(Calzados *cal, FILE *archivo)
 
             if (cal->mes < primerIngreso.mes && cal->anio == primerIngreso.anio)
             {
-                printf("El mes ingresado es inferior al 1er mes registrado.\n");
+                printf("El mes ingresado es inferior al 1er mes registrado (FECHA BASE: %d/%d/%d).\n", primerIngreso.dia, primerIngreso.mes, primerIngreso.anio);
                 printf("Intente de nuevo ingresando un mes supeior o igual: ");
                 scanf("%d", &cal->mes);
                 limpiarBuffer();
@@ -109,14 +182,14 @@ void validarFecha(Calzados *cal, FILE *archivo)
 
             if (cal->dia < primerIngreso.dia && cal->mes == primerIngreso.mes && cal->anio == primerIngreso.anio)
             {
-                printf("El dia ingresado es inferior al 1er dia registrado.\n");
+                printf("El dia ingresado es inferior al 1er dia registrado (FECHA BASE: %d/%d/%d).\n", primerIngreso.dia, primerIngreso.mes, primerIngreso.anio);
                 printf("Intente de nuevo ingresando un dia superior o igual: ");
                 scanf("%d", &cal->dia);
                 limpiarBuffer();
                 continue; // saltará al while en donde evaluará la validacion, como sigue en 0 el codigo volverá a empezar desde la 1ra validacion
             }
         }
-        // Si pasó todas las validaciones, ahora entonces se puede decir que la fecha ingresada es correcta.
+        // Si pasó todas las validaciones o es el 1er producto ingresado, dará el OK dando por válida la fecha.
         validacion = 1;
     } while (!validacion);
 }
@@ -185,14 +258,11 @@ int leerOrden()
     return orden;
 }
 
-char *obtenerNombreArchivo()
+void obtenerNombreArchivo(char *nombre, int tamanio)
 {
-    static char nombre[20];
     int dia_actual, mes_actual, anio_actual;
     obtenerFechaActual(&dia_actual, &mes_actual, &anio_actual);
-    snprintf(nombre, sizeof(nombre), "bajas_%d-%d-%d.xyz", dia_actual, mes_actual, anio_actual);
-
-    return nombre;
+    snprintf(nombre, tamanio, "bajas_%d-%d-%d.xyz", dia_actual, mes_actual, anio_actual);
 }
 // ---------------------------FUNCIONES PEDIDAS--------------------------
 //(Despues las pasamos a un archivo a parte donde estáran todas las funciones)
@@ -423,7 +493,7 @@ void altaProducto(FILE *archivo)
     printf("Se ha aniadido el producto.\n");
     fclose(archivo);
 }
-// ************* VERIFICAR QUE FUNCIONA *****************
+// ************* FALTA ARREGLAR *****************
 
 // 4 (LISTAR BINARIO)
 
@@ -644,7 +714,7 @@ void bajaFisica(FILE *archivo)
         return;
     }
 
-    // Validar que no hay productos
+    // Validar que haya productos
     fseek(archivo, 0, SEEK_END);
     int cantidad_datos = ftell(archivo) / sizeof(Calzados);
     if (cantidad_datos == 0)
@@ -664,8 +734,8 @@ void bajaFisica(FILE *archivo)
     }
 
     // Creacion del archivo con la fecha actual (Ver si lo puedo optimizar)
-    char *nombre_archivo;
-    nombre_archivo = obtenerNombreArchivo();
+    char nombre_archivo[20];
+    obtenerNombreArchivo(nombre_archivo, sizeof(nombre_archivo));
     FILE *archivo_txt;
     archivo_txt = fopen(nombre_archivo, "wt");
 
@@ -685,6 +755,9 @@ void bajaFisica(FILE *archivo)
                 primera_impresion = 1;
             }
             fprintf(archivo_txt, "%2d %2s %10d/%d/%d %15s %12d %22.2f %19.2f %16.2f %10.2f %10.2f %10d\n", cal.orden, cal.vendedor, cal.dia, cal.mes, cal.anio, cal.categoria, cal.cantidad, cal.precio, cal.descuento, cal.sub_total, cal.iva, cal.total, cal.activo);
+
+            Calzados temporal = {0}; // Creo 'temporal' para almacenar los datos en el archivo 'temp'
+            fwrite(&temporal, sizeof(Calzados), 1, temp);
         }
         else
         {
@@ -697,7 +770,10 @@ void bajaFisica(FILE *archivo)
         printf("No se han encontrado productos inactivos\n");
         printf("Archivo de texto no ha sido creado.\n");
         fclose(archivo);
+        fclose(archivo_txt);
         remove(nombre_archivo);
+        fclose(temp);
+        remove("temporal.dat");
         return;
     }
 
@@ -708,7 +784,7 @@ void bajaFisica(FILE *archivo)
     rename("temporal.dat", "registro.dat");
     printf("El archivo de texto con los productos inactivos ha sido creado.\n");
 }
-// ******************* VERIFICAR QUE FUNCIONE ******************
+// ******************* FALTA ARREGLAR ******************
 
 // 9 (LISTAR TEXTO)
 
