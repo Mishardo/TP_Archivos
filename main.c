@@ -98,10 +98,29 @@ void validarFecha(Calzados *cal, FILE *archivo)
     int dia_actual, mes_actual, anio_actual;
     obtenerFechaActual(&dia_actual, &mes_actual, &anio_actual);
 
-    // Validar que la fecha no supere a la fecha actual
     int validacion = 0;
     do
     {
+        // Validar que tenga un formato correcto
+        struct tm fecha = {0};
+        fecha.tm_mday = cal->dia;
+        fecha.tm_mon = cal->mes - 1;     // meses van de 0–11
+        fecha.tm_year = cal->anio + 2000 - 1900; // años desde 1900
+        // Se normaliza la fecha con mktime()
+        time_t t = mktime(&fecha);
+        struct tm *f = localtime(&t);
+        // Se compara si la fecha normalizada es distinta de la fecha ingresada.
+        // Si resulta serlo, entonces la fecha tenía un formato inválido
+        if (f->tm_mday != cal->dia || f->tm_mon != cal->mes - 1 || f->tm_year != cal->anio + 2000 - 1900)
+        {
+            printf("La fecha ingresada tiene formato incorrecto.\n");
+            printf("Vuelva a intentarlo: ");
+            scanf("%d %d %d", &cal->dia, &cal->mes, &cal->anio);
+            limpiarBuffer();
+            continue; // Repetir el ciclo
+        }
+
+        // Validar que la fecha no supere a la fecha actual
         while (cal->anio > anio_actual)
         {
             printf("El anio es superior al anio actual (FECHA ACTUAL: %d/%d/%d).\n", dia_actual, mes_actual, anio_actual);
@@ -270,10 +289,8 @@ void obtenerNombreArchivo(char *nombre, int tamanio)
 #include <stdio.h>
 
 //MENU
-void menu() {
-    int operacion;
-    char listado;
-    char busca_venta;
+int menu() {
+    int operacion = 10;
 
     do {
         printf("Ingrese el numero de la accion que desea ejecutar:\n");
@@ -285,64 +302,16 @@ void menu() {
         printf("    6. Baja logica de un vendedor buscando por su numero de orden.\n");
         printf("    7. Baja fisica de los vendedores inactivos.\n");
         printf("    8. Listar el archivo con las bajas fisicas realizadas.\n");
+        printf("    0. Para finalizar el programa.\n");
         scanf("%d", &operacion);
+        limpiarBuffer();
 
-        if (operacion < 1 || operacion > 8)
+        if (operacion < 0 || operacion > 8)
             printf("Opcion invalida. Ingrese un número entre 1 y 8.\n");
 
-    } while (operacion < 1 || operacion > 8);
+    } while (operacion < 0 || operacion > 8);
 
-    switch (operacion) {
-        case 1:
-            crearBinario("registro.dat");
-            break;
-        case 2:
-            altaProducto("registro.dat");
-        case 3:
-            do {
-                printf("\nIndique como desea listar:\n");
-                printf("a) Listar todos (activos e inactivos)\n");
-                printf("b) Listar por categoría ingresada\n");
-                printf("Ingrese una opcion (a/b): ");
-                scanf(" %c", &listado);
-
-                if ((listado != 'a' && listado != 'A') &&
-                    (listado != 'b' && listado != 'B'))
-                    printf("Opcion invalida. Ingrese a o b.\n");
-
-            } while ((listado != 'a' && listado != 'A') && (listado != 'b' && listado != 'B'));
-
-            if ((listado == 'a' || listado == 'A')) lista_todos("registro.dat");
-            if ((listado == 'b' || listado == 'B')) lista_categoria("registro.dat");
-            break;
-        case 4:
-            do {
-                printf("\nIndique como desea buscar:\n");
-                printf("c) Buscar por número de orden.\n");
-                printf("d) Buscar por nombre del vendedor.\n");
-                printf("Ingrese una opcion (c/d): ");
-                scanf(" %c", &busca_venta);
-
-                if ((busca_venta != 'c' && busca_venta != 'C') &&
-                    (busca_venta != 'd' && busca_venta != 'D'))
-                    printf("Opcion invalida. Ingrese c o d.\n");
-
-            } while ((busca_venta != 'c' && busca_venta != 'C') && (busca_venta != 'd' && busca_venta != 'D'));
-
-            if ((busca_venta == 'c' || busca_venta == 'C')) busca_venta_por_numero("registro.dat");
-            if ((busca_venta == 'd' || busca_venta == 'D')) busca_venta_por_nombre("registro.dat");
-            break;
-        case 5:
-            modificarProducto("registro.dat");
-            break;
-        case 6:
-            bajaLogica("registro.dat");
-            break;
-        case 7:
-            bajaFisica("registro.dat");
-        default:
-            break;
-    }
+    return operacion;
 }
 
 // 2 (CREAR ARCHIVO BINARIO)
@@ -496,8 +465,52 @@ void altaProducto(FILE *archivo)
 // ************* FALTA ARREGLAR *****************
 
 // 4 (LISTAR BINARIO)
+void listarProdutos(FILE *archivo)
+{
+    char listado;
+
+    do {
+        printf("\nIndique como desea listar:\n");
+        printf("a) Listar todos (activos e inactivos)\n");
+        printf("b) Listar por categoría ingresada\n");
+        printf("Ingrese una opcion (a/b): ");
+        scanf(" %c", &listado);
+
+        if ((listado != 'a' && listado != 'A') &&
+            (listado != 'b' && listado != 'B'))
+            printf("Opcion invalida. Ingrese a o b.\n");
+
+    } while ((listado != 'a' && listado != 'A') && (listado != 'b' && listado != 'B'));
+
+    // Las comenté porque sino no me deja compliar
+    // if ((listado == 'a' || listado == 'A')) lista_todos("registro.dat");
+    // if ((listado == 'b' || listado == 'B')) lista_categoria("registro.dat");
+}
+// ************* FALTA TERMINAR ***************
 
 // 5 (BUSCAR)
+void buscarProducto(FILE *archivo)
+{
+    char busca_venta;
+
+    do {
+        printf("\nIndique como desea buscar:\n");
+        printf("c) Buscar por número de orden.\n");
+        printf("d) Buscar por nombre del vendedor.\n");
+        printf("Ingrese una opcion (c/d): ");
+        scanf(" %c", &busca_venta);
+
+        if ((busca_venta != 'c' && busca_venta != 'C') &&
+            (busca_venta != 'd' && busca_venta != 'D'))
+            printf("Opcion invalida. Ingrese c o d.\n");
+
+    } while ((busca_venta != 'c' && busca_venta != 'C') && (busca_venta != 'd' && busca_venta != 'D'));
+
+    // Las comenté porque sino no me deja compilar
+    // if ((busca_venta == 'c' || busca_venta == 'C')) busca_venta_por_numero(archivo);
+    // if ((busca_venta == 'd' || busca_venta == 'D')) busca_venta_por_nombre(archivo);
+}
+// ************* FALTA TERMINAR ***************
 
 // 6 (MODIFICAR)
 void modificarProducto(FILE *archivo)
@@ -784,15 +797,57 @@ void bajaFisica(FILE *archivo)
     rename("temporal.dat", "registro.dat");
     printf("El archivo de texto con los productos inactivos ha sido creado.\n");
 }
-// ******************* FALTA ARREGLAR ******************
+// ******************* VERIFICAR QUE FUNCIONA ******************
 
 // 9 (LISTAR TEXTO)
 
+void realizarOperacion(int eleccion, FILE *archivo)
+{
+    switch (eleccion)
+        {
+        case 1:
+            crearBinario(archivo);
+            break;
+        case 2:
+            altaProducto(archivo);
+            break;
+        case 3:
+            printf("Función aún no desarrollada.\n");
+            // listarProdutos(archivo);
+            break;
+        case 4:
+            printf("Función aún no desarrollada.\n");
+            // buscarProducto(archivo);
+            break;
+        case 5:
+            modificarProducto(archivo);
+            break;
+        case 6:
+            bajaLogica(archivo);
+            break;
+        case 7:
+            bajaFisica(archivo);
+            break;
+        case 8:
+            printf("Función aún no desarrollada.\n");
+            break;
+        default:
+            break;
+        }
+}
 //-------------------------------------------------------------------------------------
 
 int main()
 {
+    FILE *archivo = NULL;
+    int eleccion;
     // MENU
+    do
+    {
+        eleccion = menu();
+        realizarOperacion(eleccion, archivo);
+    } while (eleccion != 0);
 
+    printf("Saliendo del programa.");
     return 0;
 }
