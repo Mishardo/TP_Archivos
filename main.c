@@ -294,15 +294,15 @@ int menu() {
 
     do {
         printf("Ingrese el numero de la accion que desea ejecutar:\n");
-        printf("    1. Registrar nuevos vendedores.\n");
-        printf("    2. Crear un nuevo archivo de registros de ventas.\n");
-        printf("    3. Listar el contenido del archivo con sus respectivos títulos de columna.\n");
-        printf("    4. Buscar datos de una venta.\n");
-        printf("    5. Modificar el importe del precio unitario por numero de ID/orden.\n");
-        printf("    6. Baja logica de un vendedor buscando por su numero de orden.\n");
-        printf("    7. Baja fisica de los vendedores inactivos.\n");
-        printf("    8. Listar el archivo con las bajas fisicas realizadas.\n");
-        printf("    0. Para finalizar el programa.\n");
+        printf(" 1. Crear archivo.\n");
+        printf(" 2. Registrar nuevo producto.\n");
+        printf(" 3. Listar los productos.\n");
+        printf(" 4. Buscar un producto.\n");
+        printf(" 5. Modificar producto (cantidad).\n");
+        printf(" 6. Dar de baja un producto.\n");
+        printf(" 7. Crear archivo de productos dados de baja.\n");
+        printf(" 8. Listar las bajas fisicas realizadas.\n");
+        printf(" 0. Para finalizar el programa.\n");
         scanf("%d", &operacion);
         limpiarBuffer();
 
@@ -759,7 +759,7 @@ void bajaFisica(FILE *archivo)
     int primera_impresion = 0;
     while ((fread(&cal, sizeof(Calzados), 1, archivo)) == 1)
     {
-        if (cal.activo == 0)
+        if (cal.activo == 0 && cal.orden != 0)
         {
             encontrado = 1;
             if (!primera_impresion)
@@ -781,7 +781,7 @@ void bajaFisica(FILE *archivo)
     if (!encontrado)
     {
         printf("No se han encontrado productos inactivos\n");
-        printf("Archivo de texto no ha sido creado.\n");
+        printf("El archivo de texto no ha sido creado.\n");
         fclose(archivo);
         fclose(archivo_txt);
         remove(nombre_archivo);
