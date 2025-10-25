@@ -518,9 +518,8 @@ void buscarProducto(FILE *archivo)
 
     } while ((busca_venta != 'c' && busca_venta != 'C') && (busca_venta != 'd' && busca_venta != 'D'));
 
-    // Las comenté porque sino no me deja compilar
-    // if ((busca_venta == 'c' || busca_venta == 'C')) busca_venta_por_numero(archivo);
-    // if ((busca_venta == 'd' || busca_venta == 'D')) busca_venta_por_nombre(archivo);
+    if ((busca_venta == 'c' || busca_venta == 'C')) busca_venta_por_numero(archivo);
+    if ((busca_venta == 'd' || busca_venta == 'D')) busca_venta_por_nombre(archivo);
 }
 // ************* FALTA TERMINAR ***************
 void busca_venta_por_numero(FILE *archivo){
@@ -586,6 +585,65 @@ void busca_venta_por_numero(FILE *archivo){
         fclose(archivo);
         return;
     }
+}
+
+void busca_venta_por_nombre(FILE *archivo){
+    Calzados cal;
+    char busca_nombre[20];
+    archivo = fopen("registro.dat", "rb");
+
+    if (archivo == NULL) {
+    printf("No se pudo abrir el archivo.\n");
+    return;
+    }
+
+    // Valido que haya productos ingresados
+    fseek(archivo, 0, SEEK_END);
+    int cantidad_datos = ftell(archivo) / sizeof(Calzados);
+    if (cantidad_datos == 0){
+        printf("No hay productos ingresados.\n");
+        fclose(archivo);
+        return;
+    }
+
+    printf("Ingrese el nombre del vendedor que desea buscar\n");
+    scanf("%s", busca_nombre);
+    limpiarBuffer();
+
+    int nombre_encontrado = 0;
+    int titulo_printeado = 0;
+    fseek(archivo, 0, SEEK_SET);
+    while ((fread(&cal, sizeof(Calzados), 1, archivo)) == 1){
+        if (strcmp(busca_nombre, cal.vendedor) == 0){
+            nombre_encontrado = 1;
+            calcularImportes(&cal);
+            
+            if(!titulo_printeado){
+                titulo_printeado = 1;
+                printf("Ventas del vendedor: %s\n\n", cal.vendedor);
+            }
+            printf("Numero de orden: %d\n", cal.orden);
+            printf("Fecha: %02d/%02d/%04d\n", cal.dia, cal.mes, cal.anio);
+            printf("Categoria: %s\n", cal.categoria);
+            printf("Cantidad: %d\n", cal.cantidad);
+            printf("Precio unitario: %.2f\n", cal.precio);
+            printf("Descuento: %.2f%%\n", cal.descuento);
+            printf("SubTotal: %.2f\n", cal.sub_total);
+            printf("I.V.A: %.2f\n", cal.iva);
+            printf("Importe final: %.2f\n", cal.total);
+            if (cal.activo == 0){
+                printf("Estado: Inactivo\n");
+            } else {
+                printf("Estado: Activo\n");
+            }
+        }
+    }
+    if (!nombre_encontrado){
+        printf("El nombre %s no se ha encontrado.\n", busca_nombre);
+        fclose(archivo);
+        return;
+    }
+    return;
 }
 
 // 6 (MODIFICAR)
