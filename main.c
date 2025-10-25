@@ -272,6 +272,7 @@ int leerOrden()
         printf("El nro de orden ingresado no es correcto.\n");
         printf("Intente de nuevo: ");
         scanf("%d", &orden);
+        limpiarBuffer();
     }
 
     return orden;
@@ -351,11 +352,22 @@ void altaProducto(FILE *archivo)
     int bandera = 0;
     while (!bandera)
     {
-        // Validar que no es un float o caracter
+        // Validar que no es un caracter
         if (lectura != 1)
         {
             printf("El numero ingresado no es un entero.\n");
             printf("Vuelva a intententarlo: ");
+            lectura = scanf("%d", &orden_temporal);
+            limpiarBuffer();
+            continue;
+        }
+
+        // Validar que no es un float
+        char c = getchar();        // Le signo a c el siguiente caracter luego de haber leido la parte entera del numero
+        if (c != '\n' && c != EOF) // Si despues de leer la parte entera no es un enter o un fin del archivo, entonces es un nro flotante
+        {
+            printf("Se ingresó un numero flotante.\n");
+            printf("Intente de nuevo: ");
             lectura = scanf("%d", &orden_temporal);
             limpiarBuffer();
             continue;
@@ -373,7 +385,7 @@ void altaProducto(FILE *archivo)
 
         // Validar que no exista previamente
         Calzados temporal;
-        fseek(archivo, (orden_temporal - 1) * sizeof(Calzados), SEEK_SET); // Me paro en la linea en donde estaría al
+        fseek(archivo, (orden_temporal - 1) * sizeof(Calzados), SEEK_SET); // Me paro en la linea en donde estaría la orden
         if ((fread(&temporal, sizeof(Calzados), 1, archivo)) == 1)         // fread va a almacenar los datos en temp y dará 1 si existen los datos.
         {
             if (orden_temporal == temporal.orden && temporal.activo == 1)
@@ -397,7 +409,7 @@ void altaProducto(FILE *archivo)
     limpiarBuffer();
     validarSoloLetras(cal.vendedor);
 
-    // Ingreso de la FECHA (Erorr al momento de validar)
+    // Ingreso de la FECHA (Error al momento de validar)
     printf("Fecha de ingreso del producto\n");
     printf("Fomato dia/mes/anio (separado por espacios)\n");
     printf("FECHA: ");
@@ -521,8 +533,26 @@ void busca_venta_por_numero(FILE *archivo){
     return;
     }
 
+    // Valido que haya productos ingresados
+    fseek(archivo, 0, SEEK_END);
+    int cantidad_datos = ftell(archivo) / sizeof(Calzados);
+    if (cantidad_datos == 0){
+        printf("No hay productos ingresados.\n");
+        fclose(archivo);
+        return;
+    }
+
     printf("Ingrese el número de producto que desea buscar\n");
     scanf("%d", &busca_numero);
+    limpiarBuffer();
+
+    // valido que el nro a buscar sea mayor que 0
+    while (busca_numero <= 0){
+        printf("El numero ingresado es menor o igual que cero (0).\n");
+        printf("Vuelva a intentarlo: ");
+        scanf("%d", &busca_numero);
+        limpiarBuffer();
+    }
 
     int numero_encontrado = 0;
     fseek(archivo, 0, SEEK_SET);
@@ -538,6 +568,8 @@ void busca_venta_por_numero(FILE *archivo){
             printf("Cantidad: %d\n", cal.cantidad);
             printf("Precio unitario: %.2f\n", cal.precio);
             printf("Descuento: %.2f%%\n", cal.descuento);
+            printf("SubTotal: %.2f\n", cal.sub_total);
+            printf("I.V.A: %.2f\n", cal.iva);
             printf("Importe final: %.2f\n", cal.total);
             if (cal.activo == 0){
                 printf("Estado: Inactivo\n");
