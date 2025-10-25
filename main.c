@@ -511,6 +511,50 @@ void buscarProducto(FILE *archivo)
     // if ((busca_venta == 'd' || busca_venta == 'D')) busca_venta_por_nombre(archivo);
 }
 // ************* FALTA TERMINAR ***************
+void busca_venta_por_numero(FILE *archivo){
+    Calzados cal;
+    int busca_numero;
+    archivo = fopen("registro.dat", "rb");
+
+    if (archivo == NULL) {
+    printf("No se pudo abrir el archivo.\n");
+    return;
+    }
+
+    printf("Ingrese el número de producto que desea buscar\n");
+    scanf("%d", &busca_numero);
+
+    int numero_encontrado = 0;
+    fseek(archivo, 0, SEEK_SET);
+    while ((fread(&cal, sizeof(Calzados), 1, archivo)) == 1){
+        if (busca_numero == cal.orden){
+            numero_encontrado = 1;
+            calcularImportes(&cal);
+
+            printf("Numero de orden: %d\n", cal.orden);
+            printf("Vendedor: %s\n", cal.vendedor);
+            printf("Fecha: %02d/%02d/%04d\n", cal.dia, cal.mes, cal.anio);
+            printf("Categoria: %s\n", cal.categoria);
+            printf("Cantidad: %d\n", cal.cantidad);
+            printf("Precio unitario: %.2f\n", cal.precio);
+            printf("Descuento: %.2f%%\n", cal.descuento);
+            printf("Importe final: %.2f\n", cal.total);
+            if (cal.activo == 0){
+                printf("Estado: Inactivo\n");
+            } else {
+                printf("Estado: Activo\n");
+            }
+
+            fclose(archivo);
+            break;
+        }
+    }
+    if (!numero_encontrado){
+        printf("El numero %d no se ha encontrado.\n", busca_numero);
+        fclose(archivo);
+        return;
+    }
+}
 
 // 6 (MODIFICAR)
 void modificarProducto(FILE *archivo)
@@ -590,7 +634,7 @@ void modificarProducto(FILE *archivo)
     }
     if (!orden_encontrada)
     {
-        printf("La orden %d no se ha encontado.\n", orden);
+        printf("La orden %d no se ha encontrado.\n", orden);
         fclose(archivo);
         return;
     }
