@@ -739,9 +739,6 @@ void busca_venta_por_nombre(FILE *archivo){
             } else {
                 printf("Estado: Activo\n");
             }
-
-            fclose(archivo);
-            return;
         }
     }
     if (!nombre_encontrado){
@@ -749,6 +746,7 @@ void busca_venta_por_nombre(FILE *archivo){
         fclose(archivo);
         return;
     }
+    return;
 }
 // ********************** VERIFICAR QUE FUNCIONAN *********************
 
@@ -1040,6 +1038,33 @@ void bajaFisica(FILE *archivo)
 // ******************* VERIFICAR QUE FUNCIONA ******************
 
 // 9 (LISTAR TEXTO)
+void lista_todos(FILE *archivo){
+    char nombre_archivo[30];
+    obtenerNombreArchivo(nombre_archivo, sizeof(nombre_archivo));
+    archivo = fopen(nombre_archivo, "rt");
+
+    if (archivo == NULL) {
+    printf("No se pudo abrir el archivo.\n");
+    return;
+    }
+
+    if (fgetc(archivo) == EOF){
+        printf("No hay productos que se hayan dado de baja.\n");
+        fclose(archivo);
+        return;
+    }
+    rewind(archivo);
+
+    printf("Listado de todas las bajas:\n");
+    char linea[200];
+    while (fgets(linea, sizeof(linea), archivo)) {
+        printf("%s", linea);
+    }
+
+    fclose(archivo);
+    return;
+}
+
 
 void realizarOperacion(int eleccion, FILE *archivo)
 {
