@@ -636,6 +636,9 @@ void busca_venta_por_nombre(FILE *archivo){
             } else {
                 printf("Estado: Activo\n");
             }
+
+            fclose(archivo);
+            return;
         }
     }
     if (!nombre_encontrado){
@@ -643,7 +646,6 @@ void busca_venta_por_nombre(FILE *archivo){
         fclose(archivo);
         return;
     }
-    return;
 }
 
 // 6 (MODIFICAR)
