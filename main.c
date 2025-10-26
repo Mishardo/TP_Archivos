@@ -287,9 +287,7 @@ void obtenerNombreArchivo(char *nombre, int tamanio)
 // ---------------------------FUNCIONES PEDIDAS--------------------------
 //(Despues las pasamos a un archivo a parte donde estáran todas las funciones)
 
-#include <stdio.h>
-
-//MENU
+// 1 (MENU)
 int menu() {
     int operacion = 10;
 
@@ -362,16 +360,16 @@ void altaProducto(FILE *archivo)
             continue;
         }
 
-        // Validar que no es un float
-        char c = getchar();        // Le signo a c el siguiente caracter luego de haber leido la parte entera del numero
-        if (c != '\n' && c != EOF) // Si despues de leer la parte entera no es un enter o un fin del archivo, entonces es un nro flotante
+        // Validar que no es un float (No está funcionando)
+        /*char c = getchar();
+        if ((c = getchar()) != '\n' && c != EOF) // Si despues de leer la parte entera no es un enter o un fin del archivo, entonces es un nro flotante
         {
             printf("Se ingresó un numero flotante.\n");
             printf("Intente de nuevo: ");
             lectura = scanf("%d", &orden_temporal);
             limpiarBuffer();
             continue;
-        }
+        }*/
 
         // Validar que no sea menor o igual a 0
         if (orden_temporal <= 0)
@@ -604,27 +602,6 @@ void lista_categoria(FILE *archivo){
 // ************* FALTA TERMINAR ***************
 
 // 5 (BUSCAR)
-void buscarProducto(FILE *archivo)
-{
-    char busca_venta;
-
-    do {
-        printf("\nIndique como desea buscar:\n");
-        printf("c) Buscar por número de orden.\n");
-        printf("d) Buscar por nombre del vendedor.\n");
-        printf("Ingrese una opcion (c/d): ");
-        scanf(" %c", &busca_venta);
-
-        if ((busca_venta != 'c' && busca_venta != 'C') &&
-            (busca_venta != 'd' && busca_venta != 'D'))
-            printf("Opcion invalida. Ingrese c o d.\n");
-
-    } while ((busca_venta != 'c' && busca_venta != 'C') && (busca_venta != 'd' && busca_venta != 'D'));
-
-    //if ((busca_venta == 'c' || busca_venta == 'C')) busca_venta_por_numero(archivo);
-    //if ((busca_venta == 'd' || busca_venta == 'D')) busca_venta_por_nombre(archivo);
-}
-
 void busca_venta_por_numero(FILE *archivo){
     Calzados cal;
     int busca_numero;
@@ -739,6 +716,9 @@ void busca_venta_por_nombre(FILE *archivo){
             } else {
                 printf("Estado: Activo\n");
             }
+            
+            fclose(archivo);
+            return;
         }
     }
     if (!nombre_encontrado){
@@ -746,7 +726,27 @@ void busca_venta_por_nombre(FILE *archivo){
         fclose(archivo);
         return;
     }
-    return;
+}
+
+void buscarProducto(FILE *archivo)
+{
+    char busca_venta;
+
+    do {
+        printf("\nIndique como desea buscar:\n");
+        printf("c) Buscar por número de orden.\n");
+        printf("d) Buscar por nombre del vendedor.\n");
+        printf("Ingrese una opcion (c/d): ");
+        scanf(" %c", &busca_venta);
+
+        if ((busca_venta != 'c' && busca_venta != 'C') &&
+            (busca_venta != 'd' && busca_venta != 'D'))
+            printf("Opcion invalida. Ingrese c o d.\n");
+
+    } while ((busca_venta != 'c' && busca_venta != 'C') && (busca_venta != 'd' && busca_venta != 'D'));
+
+    if ((busca_venta == 'c' || busca_venta == 'C')) busca_venta_por_numero(archivo);
+    if ((busca_venta == 'd' || busca_venta == 'D')) busca_venta_por_nombre(archivo);
 }
 // ********************** VERIFICAR QUE FUNCIONAN *********************
 
@@ -1038,7 +1038,7 @@ void bajaFisica(FILE *archivo)
 // ******************* VERIFICAR QUE FUNCIONA ******************
 
 // 9 (LISTAR TEXTO)
-void lista_todos(FILE *archivo){
+void listar_texto(FILE *archivo){
     char nombre_archivo[30];
     obtenerNombreArchivo(nombre_archivo, sizeof(nombre_archivo));
     archivo = fopen(nombre_archivo, "rt");
@@ -1081,8 +1081,7 @@ void realizarOperacion(int eleccion, FILE *archivo)
             // listarProdutos(archivo);
             break;
         case 4:
-            printf("Función aún no desarrollada.\n");
-            // buscarProducto(archivo);
+            buscarProducto(archivo);
             break;
         case 5:
             modificarProducto(archivo);
@@ -1094,7 +1093,7 @@ void realizarOperacion(int eleccion, FILE *archivo)
             bajaFisica(archivo);
             break;
         case 8:
-            printf("Función aún no desarrollada.\n");
+            listar_texto(archivo);
             break;
         default:
             break;
