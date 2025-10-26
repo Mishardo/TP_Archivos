@@ -494,9 +494,112 @@ void listarProdutos(FILE *archivo)
 
     } while ((listado != 'a' && listado != 'A') && (listado != 'b' && listado != 'B'));
 
-    // Las comenté porque sino no me deja compliar
-    // if ((listado == 'a' || listado == 'A')) lista_todos("registro.dat");
-    // if ((listado == 'b' || listado == 'B')) lista_categoria("registro.dat");
+    //if ((listado == 'a' || listado == 'A')) lista_todos("registro.dat");
+    //if ((listado == 'b' || listado == 'B')) lista_categoria("registro.dat");
+}
+
+void lista_todos(FILE *archivo){
+    Calzados cal;
+
+    archivo = fopen("registro.dat", "rb");
+
+    if (archivo == NULL) {
+    printf("No se pudo abrir el archivo.\n");
+    return;
+    }
+
+    // Valido que haya productos ingresados
+    fseek(archivo, 0, SEEK_END);
+    int cantidad_datos = ftell(archivo) / sizeof(Calzados);
+    if (cantidad_datos == 0){
+        printf("No hay productos ingresados.\n");
+        fclose(archivo);
+        return;
+    }
+
+    fseek(archivo, 0, SEEK_SET);
+    printf("Listado de todos los archivos:\n");
+    while ((fread(&cal, sizeof(Calzados), 1, archivo)) == 1){
+        calcularImportes(&cal);
+        
+        printf("Numero de orden: %d\n", cal.orden);
+        printf("Vendedor: %s\n", cal.vendedor);
+        printf("Fecha: %02d/%02d/%04d\n", cal.dia, cal.mes, cal.anio);
+        printf("Categoria: %s\n", cal.categoria);
+        printf("Cantidad: %d\n", cal.cantidad);
+        printf("Precio unitario: %.2f\n", cal.precio);
+        printf("Descuento: %.2f%%\n", cal.descuento);
+        printf("SubTotal: %.2f\n", cal.sub_total);
+        printf("I.V.A: %.2f\n", cal.iva);
+        printf("Importe final: %.2f\n", cal.total);
+        if (cal.activo == 0){
+            printf("Estado: Inactivo\n");
+        } else {
+            printf("Estado: Activo\n");
+        }
+        printf("-------------------------------------\n");
+    }
+    printf("\nFin del listado\n");
+
+    fclose(archivo);
+    return;
+}
+
+void lista_categoria(FILE *archivo){
+    Calzados cal;
+    char busca_categoria[15];
+    archivo = fopen("registro.dat", "rb");
+
+    if (archivo == NULL) {
+    printf("No se pudo abrir el archivo.\n");
+    return;
+    }
+
+    // Valido que haya productos ingresados
+    fseek(archivo, 0, SEEK_END);
+    int cantidad_datos = ftell(archivo) / sizeof(Calzados);
+    if (cantidad_datos == 0){
+        printf("No hay productos ingresados.\n");
+        fclose(archivo);
+        return;
+    }
+
+    printf("Ingrese el nombre de la categoria que desea buscar\n");
+    scanf("%s", busca_categoria);
+    limpiarBuffer();
+
+    int categoria_encontrada = 0;
+    fseek(archivo, 0, SEEK_SET);
+    while ((fread(&cal, sizeof(Calzados), 1, archivo)) == 1){
+        if (strcmp(busca_categoria, cal.categoria) == 0){
+            calcularImportes(&cal);
+            
+            if(!categoria_encontrada){
+                categoria_encontrada = 1;
+                printf("Ventas de la categoria: %s\n\n", cal.categoria);
+            }
+            printf("Numero de orden: %d\n", cal.orden);
+            printf("Vendedor: %s\n", cal.vendedor);
+            printf("Fecha: %02d/%02d/%04d\n", cal.dia, cal.mes, cal.anio);
+            printf("Cantidad: %d\n", cal.cantidad);
+            printf("Precio unitario: %.2f\n", cal.precio);
+            printf("Descuento: %.2f%%\n", cal.descuento);
+            printf("SubTotal: %.2f\n", cal.sub_total);
+            printf("I.V.A: %.2f\n", cal.iva);
+            printf("Importe final: %.2f\n", cal.total);
+            if (cal.activo == 0){
+                printf("Estado: Inactivo\n");
+            } else {
+                printf("Estado: Activo\n");
+            }
+        }
+    }
+    if (!categoria_encontrada){
+        printf("La categoria %s no se ha encontrado.\n", busca_categoria);
+        fclose(archivo);
+        return;
+    }
+    return;
 }
 // ************* FALTA TERMINAR ***************
 
@@ -518,10 +621,10 @@ void buscarProducto(FILE *archivo)
 
     } while ((busca_venta != 'c' && busca_venta != 'C') && (busca_venta != 'd' && busca_venta != 'D'));
 
-    if ((busca_venta == 'c' || busca_venta == 'C')) busca_venta_por_numero(archivo);
-    if ((busca_venta == 'd' || busca_venta == 'D')) busca_venta_por_nombre(archivo);
+    //if ((busca_venta == 'c' || busca_venta == 'C')) busca_venta_por_numero(archivo);
+    //if ((busca_venta == 'd' || busca_venta == 'D')) busca_venta_por_nombre(archivo);
 }
-// ************* FALTA TERMINAR ***************
+
 void busca_venta_por_numero(FILE *archivo){
     Calzados cal;
     int busca_numero;
@@ -645,6 +748,7 @@ void busca_venta_por_nombre(FILE *archivo){
     }
     return;
 }
+// ********************** VERIFICAR QUE FUNCIONAN *********************
 
 // 6 (MODIFICAR)
 void modificarProducto(FILE *archivo)
