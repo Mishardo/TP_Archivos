@@ -3,7 +3,7 @@
 (1) Dante, Mecha
 (2) David Ezekiel, Veron
 
-Fecha de entrega: ?????
+Fecha de entrega: ????
 
 -Descripción: Este programa gestiona productos de calzado, permitiendo agregar, listar y modificar productos 
 almacenados en un archivo binario, como también darlos de baja a los productos y poder crear un archivo de texto en donde se almacenaran estos productos inactivos.
