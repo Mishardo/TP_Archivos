@@ -12,6 +12,45 @@ void limpiarBuffer()
     while ((c = getchar()) != '\n' && c != EOF);
 }
 
+void guardarOrden(int primer_orden)
+{
+    FILE *ordenTemp = NULL;
+    ordenTemp = fopen("orden_temp.dat", "w+b"); //w+b para que se borre el archivo y se cree otro con el dato actualizado
+
+    if (ordenTemp == NULL)
+    {
+        printf("No se pudo crear el archivo ordenTemp\n");
+        return;
+    }
+
+    fseek(ordenTemp, 0, SEEK_SET);
+    // fwrite(cal, sizeof(Calzados), 1, ordenTemp);
+    fwrite(&primer_orden, sizeof(int), 1, ordenTemp);
+
+    fclose(ordenTemp);
+}
+
+int obtenerOrdenTemp()
+{
+    FILE *ordenTemp;
+    // Calzados cal;
+    int orden;
+
+    ordenTemp = fopen("orden_temp.dat", "r+b");
+
+    if (ordenTemp == NULL)
+    {
+        printf("No hay orden temporal.\n");
+    }
+
+    fseek(ordenTemp, 0, SEEK_SET);
+    fread(&orden, sizeof(int), 1, ordenTemp);
+
+    fclose(ordenTemp);
+
+    return orden;
+}
+
 void obtenerFechaActual(int *dia, int *mes, int *anio)
 {
     time_t t = time(NULL);                 // Obtiene el tiempo actual en segundos desde la época (1970-01-01)
@@ -75,6 +114,8 @@ int encontrarMenorFecha(FILE *archivo)
 void validarFecha(Calzados *cal, FILE *archivo)
 {
     int dia_actual, mes_actual, anio_actual;
+    static int primera_ejecucion = 0;
+    static int primer_orden = 0; // Colocado como static para que luego de terminada la función, mantenga su valor.
     obtenerFechaActual(&dia_actual, &mes_actual, &anio_actual);
 
     int validacion = 0;
@@ -125,13 +166,18 @@ void validarFecha(Calzados *cal, FILE *archivo)
         }
 
         // Validar que la fecha no sea anterior a la fecha base (la primera fecha ingresada en el programa)
-        static int primer_orden = 0;
         Calzados primerIngreso;
 
         Calzados temporal;
         int orden_encontrado = 0;
         if (primer_orden == 0)
         {
+            if (!primera_ejecucion)
+            {
+                primer_orden = obtenerOrdenTemp();
+                primera_ejecucion = 1;
+                continue;
+            }
             primer_orden = cal->orden;
         }
         else
@@ -190,6 +236,7 @@ void validarFecha(Calzados *cal, FILE *archivo)
         // Si pasó todas las validaciones o es el 1er producto ingresado, dará el OK dando por válida la fecha.
         validacion = 1;
     } while (!validacion);
+    guardarOrden(primer_orden);
 }
 
 void validarSoloLetras(char *nombre)
@@ -266,6 +313,42 @@ void obtenerNombreArchivo(char *nombre, int tamanio)
     snprintf(nombre, tamanio, "bajas_%d-%d-%d.xyz", dia_actual, mes_actual, anio_actual); 
 }
 
+void guardarImpresion()
+{
+    FILE *ImpresionTemp = NULL;
+
+    ImpresionTemp = fopen("Impresion_temp.xyz", "wt");
+    if (ImpresionTemp == NULL)
+    {
+        printf("No se pudo guardar la impresion.\n");
+    }
+
+    fprintf(ImpresionTemp, "1");
+    fclose(ImpresionTemp);
+}
+
+int obtenerImpresionTemp()
+{
+    FILE *ImpresionTemp = NULL;
+    int impresion;
+
+    ImpresionTemp = fopen("Impresion_temp.xyz", "rt");
+    if (ImpresionTemp == NULL)
+    {
+        printf("No se puedo acceder a la impresion temporal.\n");
+    }
+
+    int lectura = fscanf(ImpresionTemp, "%d", &impresion);
+    
+    if (lectura == EOF)
+    {
+        return 0;
+    }
+    else
+    {
+        return impresion;
+    }
+}
 // ---------------------------FUNCIONES PEDIDAS--------------------------
 // 1 (MENU)
 int menu() {
@@ -294,7 +377,7 @@ int menu() {
 }
 
 // 2 (CREAR ARCHIVO BINARIO)
-void crearBinario(FILE *archivo)
+void crearArchivos(FILE *archivo)
 {
     archivo = fopen("registro.dat", "w+b");
 
@@ -307,6 +390,14 @@ void crearBinario(FILE *archivo)
         printf("Archivo binario creado con exito\n");
         fclose(archivo);
     }
+
+    FILE *ordenTemp;
+    ordenTemp = fopen("orden_temp.dat", "w+b"); // Si se crea un archivo nuevo, debo borrar los datos que hay en el temporal.
+    fclose(ordenTemp);
+
+    FILE *ImpresionTemp;
+    ImpresionTemp = fopen("Impresion_temp.xyz", "wt");
+    fclose(ImpresionTemp);
 }
 
 // 3 (ALTA)
@@ -914,7 +1005,11 @@ void bajaFisica(FILE *archivo)
     fseek(archivo_txt, 0, SEEK_SET);
 
     int encontrado = 0;
-    static int primera_impresion = 0; // Colocado como static para eivtar la impresión de nuevo del encabezado (si se cierra el programa, este valor se va)
+    static int primera_impresion = 0; // Colocado como static para evitar la impresión de nuevo del encabezado (si se cierra el programa, este valor se va)
+    if (!primera_impresion)
+    {
+        primera_impresion = obtenerImpresionTemp();
+    }
     while ((fread(&cal, sizeof(Calzados), 1, archivo)) == 1)
     {
         if (cal.activo == 0 && cal.orden != 0)
@@ -925,6 +1020,7 @@ void bajaFisica(FILE *archivo)
                 fprintf(archivo_txt, "Orden  Vendedor      Fecha     Categoria     Cantidad  Precio Unitario  Descuento   Subtotal     I.V.A       Total      Activo\n");
                 fprintf(archivo_txt, "-------------------------------------------------------------------------------------------------------------------------------\n");
                 primera_impresion = 1;
+                guardarImpresion();
             }
             fprintf(archivo_txt, "%-6d %-12s %02d/%02d/%02d \t%s %13d %16.2f %11.2f %12.2f %11.2f %10.2f %8d\n", cal.orden, cal.vendedor, cal.dia, cal.mes, cal.anio, cal.categoria, cal.cantidad, cal.precio, cal.descuento, cal.sub_total, cal.iva, cal.total, cal.activo);
 
@@ -989,7 +1085,7 @@ void realizarOperacion(int eleccion, FILE *archivo)
     switch (eleccion)
         {
         case 1:
-            crearBinario(archivo);
+            crearArchivos(archivo);
             break;
         case 2:
             altaProducto(archivo);

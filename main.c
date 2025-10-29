@@ -13,9 +13,16 @@ main.c
 funciones.h
 funciones.c
 struct.h
+registro.dat
+temporal.dat
+orden_temp.dat
+impresion_temp.xy
+bajas_<fecha_actual>.xyz
 
 -Funciones utlizadas: 
 void limpiarBuffer();
+void guardarOrden(int primer_orden);
+int obtenerOrdenTemp();
 void obtenerFechaActual(int *dia, int *mes, int *anio);
 int encontrarMenorFecha(FILE *archivo);
 void validarFecha(Calzados *cal, FILE *archivo);
@@ -23,6 +30,8 @@ void validarSoloLetras(char *nombre);
 void calcularImportes(Calzados *cal);
 int leerOrden();
 void obtenerNombreArchivo(char *nombre, int tamanio);
+void guardarImpresion();
+int obtenerImpresionTemp();
 int menu();
 void crearBinario(FILE *archivo);
 void altaProducto(FILE *archivo);

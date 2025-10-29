@@ -5,6 +5,10 @@
 //---------------------FUNCIONES EXTRA--------------------------------
 void limpiarBuffer();
 
+void guardarOrden(int primer_orden);
+
+int obtenerOrdenTemp();
+
 void obtenerFechaActual(int *dia, int *mes, int *anio);
 
 int encontrarMenorFecha(FILE *archivo);
@@ -19,6 +23,9 @@ int leerOrden();
 
 void obtenerNombreArchivo(char *nombre, int tamanio);
 
+void guardarImpresion();
+
+int obtenerImpresionTemp();
 // ---------------------------FUNCIONES PEDIDAS--------------------------
 // 1 (MENU)
 int menu();
