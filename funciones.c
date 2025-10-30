@@ -111,6 +111,29 @@ int encontrarMenorFecha(FILE *archivo)
     return orden; // Retorno el valor encontrado
 }
 
+void validaFormatoFecha(char *nombre_archivo, size_t tam){
+    int dia, mes, anio;
+    int fecha_valida = 0;
+    
+    // Pide y valida
+    do {
+        printf("Ingrese la fecha (dd mm aaaa): ");
+        scanf("%d %d %d", &dia, &mes, &anio);
+        limpiarBuffer();
+
+        // Validar formato
+        if (dia >= 1 && dia <= 31 && mes >= 1 && mes <= 12 && anio >= 1900){
+            fecha_valida = 1;
+        } else {
+            printf("Fecha invalida. Intente nuevamente.\n");
+        }
+
+    } while (!fecha_valida);
+
+    // Arma el nombre del archivo:
+    snprintf(nombre_archivo, tam, "bajas_%02d%02d%04d.txt", dia, mes, anio);
+}
+
 void validarFecha(Calzados *cal, FILE *archivo)
 {
     int dia_actual, mes_actual, anio_actual;
@@ -1055,22 +1078,25 @@ void bajaFisica(FILE *archivo)
 // 9 (LISTAR TEXTO)
 void listar_texto(FILE *archivo){
     char nombre_archivo[30];
-    obtenerNombreArchivo(nombre_archivo, sizeof(nombre_archivo));
+    validaFormatoFecha(nombre_archivo, sizeof(nombre_archivo));
     archivo = fopen(nombre_archivo, "rt");
-
+    
     if (archivo == NULL) {
     printf("No se pudo abrir el archivo.\n");
     return;
     }
 
-    if (fgetc(archivo) == EOF){
-        printf("No hay productos que se hayan dado de baja.\n");
+    // Valido que haya bajas
+    fseek(archivo, 0, SEEK_END);
+    if (ftell(archivo) == 0) {
+        printf("No hay productos que se hayan dado de baja en esa fecha.\n");
         fclose(archivo);
         return;
     }
     rewind(archivo);
 
-    printf("Listado de todas las bajas:\n");
+    // Listo las bajas del archivo
+    printf("Listado de las bajas:\n");
     char linea[200];
     while (fgets(linea, sizeof(linea), archivo)) {
         printf("%s", linea);

@@ -13,6 +13,8 @@ void obtenerFechaActual(int *dia, int *mes, int *anio);
 
 int encontrarMenorFecha(FILE *archivo);
 
+validaFormatoFecha(char *nombre_archivo, size_t tam);
+
 void validarFecha(Calzados *cal, FILE *archivo);
 
 void validarSoloLetras(char *nombre);
